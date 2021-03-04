@@ -148,7 +148,7 @@ class SSLTestEnv(SSLBaseEnv):
         w_ball_grad = 0.8
         w_energy = 2e-4
         if self.reward_shaping_total is None:
-            self.reward_shaping_total = {'reached': 0, 'move': 0, 'energy': 0}
+            self.reward_shaping_total = {}#{'reached': 0, 'move': 0, 'energy': 0}
 
         ball = self.frame.ball
         robot = self.frame.robots_blue[0]
@@ -159,31 +159,31 @@ class SSLTestEnv(SSLBaseEnv):
         
         # Check if goal ocurred
         if dist_robot_ball < 0.2:
-            self.reward_shaping_total['reached'] += 1
-            reward = 10
+            # self.reward_shaping_total['reached'] += 1
+            reward = 1
             goal = True
-        else:
+        # else:
 
-            if self.last_frame is not None:
-                # Calculate Move ball
-                move_reward = self.__move_reward()
-                # Calculate Energy penalty
-                # energy_penalty = self.__energy_penalty()
+        #     if self.last_frame is not None:
+        #         # Calculate Move ball
+        #         move_reward = self.__move_reward()
+        #         # Calculate Energy penalty
+        #         # energy_penalty = self.__energy_penalty()
 
-                reward = w_move * move_reward 
-                    #+ w_energy * energy_penalty
+        #         reward = w_move * move_reward 
+        #             #+ w_energy * energy_penalty
 
-                self.reward_shaping_total['move'] += w_move * move_reward
+        #         self.reward_shaping_total['move'] += w_move * move_reward
                 # self.reward_shaping_total['energy'] += w_energy \
                     # * energy_penalty
 
-        if goal:
-            initial_pos_frame: Frame = self._get_initial_positions_frame()
-            self.rsim.reset(initial_pos_frame)
-            self.frame = self.rsim.get_frame()
-            self.last_frame = None
+        # if goal:
+        #     initial_pos_frame: Frame = self._get_initial_positions_frame()
+        #     self.rsim.reset(initial_pos_frame)
+        #     self.frame = self.rsim.get_frame()
+        #     self.last_frame = None
 
-        done = self.steps * self.time_step >= 300
+        done = goal or self.steps * self.time_step >= 20
 
         return reward, done
     
