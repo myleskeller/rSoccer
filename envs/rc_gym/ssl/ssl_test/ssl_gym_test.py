@@ -168,14 +168,14 @@ class SSLTestEnv(SSLBaseEnv):
                 # Calculate Move ball
                 move_reward = self.__move_reward()
                 # Calculate Energy penalty
-                energy_penalty = self.__energy_penalty()
+                # energy_penalty = self.__energy_penalty()
 
-                reward = w_move * move_reward + \
-                    w_energy * energy_penalty
+                reward = w_move * move_reward 
+                    #+ w_energy * energy_penalty
 
                 self.reward_shaping_total['move'] += w_move * move_reward
-                self.reward_shaping_total['energy'] += w_energy \
-                    * energy_penalty
+                # self.reward_shaping_total['energy'] += w_energy \
+                    # * energy_penalty
 
         if goal:
             initial_pos_frame: Frame = self._get_initial_positions_frame()
