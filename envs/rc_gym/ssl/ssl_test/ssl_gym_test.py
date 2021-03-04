@@ -52,17 +52,19 @@ class SSLTestEnv(SSLBaseEnv):
     """
 
     def __init__(self):
-        super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
+        super().__init__(field_type=1, n_robots_blue=1, n_robots_yellow=0,
                          time_step=0.032)
 
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(2, ), dtype=np.float32)
+        
+        n_obs = 4 + 7*self.n_robots_blue + 5*self.n_robots_yellow
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
-                                                shape=(40, ), dtype=np.float32)
+                                                shape=(n_obs, ),
+                                                dtype=np.float32)
 
         # Initialize Class Atributes
-        self.previous_ball_potential = None
         self.actions: Dict = None
         self.reward_shaping_total = None
         self.v_wheel_deadzone = 0.05
@@ -78,7 +80,6 @@ class SSLTestEnv(SSLBaseEnv):
     def reset(self):
         self.actions = None
         self.reward_shaping_total = None
-        self.previous_ball_potential = None
         for ou in self.ou_actions:
             ou.reset()
 
@@ -140,36 +141,104 @@ class SSLTestEnv(SSLBaseEnv):
 
         return commands
 
-    def __ball_grad(self):
-        '''Calculate ball potential gradient
-        Difference of potential of the ball in time_step seconds.
-        '''
-        # Calculate ball potential
-        length_cm = self.field_params['field_length'] * 100
-        half_lenght = (self.field_params['field_length'] / 2.0)\
-            + self.field_params['goal_depth']
+    def _calculate_reward_and_done(self):
+        reward = 0
+        goal = False
+        w_move = 0.2
+        w_ball_grad = 0.8
+        w_energy = 2e-4
+        if self.reward_shaping_total is None:
+            self.reward_shaping_total = {'reached': 0, 'move': 0, 'energy': 0}
 
-        # distance to defence
-        dx_d = (half_lenght + self.frame.ball.x) * 100
-        # distance to attack
-        dx_a = (half_lenght - self.frame.ball.x) * 100
-        dy = (self.frame.ball.y) * 100
+        ball = self.frame.ball
+        robot = self.frame.robots_blue[0]
+        dist_robot_ball = np.linalg.norm(
+            np.array([ball.x, ball.y]) 
+            - np.array([robot.x, robot.y])
+        )
+        
+        # Check if goal ocurred
+        if dist_robot_ball < 0.2:
+            self.reward_shaping_total['reached'] += 1
+            reward = 10
+            goal = True
+        else:
 
-        dist_1 = -math.sqrt(dx_a ** 2 + 2 * dy ** 2)
-        dist_2 = math.sqrt(dx_d ** 2 + 2 * dy ** 2)
-        ball_potential = ((dist_1 + dist_2) / length_cm - 1) / 2
+            if self.last_frame is not None:
+                # Calculate Move ball
+                move_reward = self.__move_reward()
+                # Calculate Energy penalty
+                energy_penalty = self.__energy_penalty()
 
-        grad_ball_potential = 0
-        # Calculate ball potential gradient
-        # = actual_potential - previous_potential
-        if self.previous_ball_potential is not None:
-            diff = ball_potential - self.previous_ball_potential
-            grad_ball_potential = np.clip(diff * 3 / self.time_step,
-                                          -5.0, 5.0)
+                reward = w_move * move_reward + \
+                    w_energy * energy_penalty
 
-        self.previous_ball_potential = ball_potential
+                self.reward_shaping_total['move'] += w_move * move_reward
+                self.reward_shaping_total['energy'] += w_energy \
+                    * energy_penalty
 
-        return grad_ball_potential
+        if goal:
+            initial_pos_frame: Frame = self._get_initial_positions_frame()
+            self.rsim.reset(initial_pos_frame)
+            self.frame = self.rsim.get_frame()
+            self.last_frame = None
+
+        done = self.steps * self.time_step >= 300
+
+        return reward, done
+    
+    def _get_initial_positions_frame(self):
+        '''Returns the position of each robot and ball for the inicial frame'''
+        field_half_length = self.field_params['field_length'] / 2
+        field_half_width = self.field_params['field_width'] / 2
+
+        def x(): return random.uniform(-field_half_length + 0.1,
+                                       field_half_length - 0.1)
+
+        def y(): return random.uniform(-field_half_width + 0.1,
+                                       field_half_width - 0.1)
+
+        def theta(): return random.uniform(-180, 180)
+
+        pos_frame: Frame = Frame()
+
+        pos_frame.ball.x = x()
+        pos_frame.ball.y = y()
+        pos_frame.ball.v_x = 0.
+        pos_frame.ball.v_y = 0.
+
+        agents = []
+        for i in range(self.n_robots_blue):
+            pos_frame.robots_blue[i] = Robot(x=x(), y=y(), theta=theta())
+            agents.append(pos_frame.robots_blue[i])
+
+        for i in range(self.n_robots_yellow):
+            pos_frame.robots_yellow[i] = Robot(x=x(), y=y(), theta=theta())
+            agents.append(pos_frame.robots_yellow[i])
+
+        def same_position_ref(obj, ref, radius):
+            if obj.x >= ref.x - radius and obj.x <= ref.x + radius and \
+                    obj.y >= ref.y - radius and obj.y <= ref.y + radius:
+                return True
+            return False
+
+        radius_ball = 0.04
+        radius_robot = 0.07
+
+        for i in range(len(agents)):
+            while same_position_ref(agents[i], pos_frame.ball, radius_ball):
+                agents[i] = Robot(x=x(), y=y(), theta=theta())
+            for j in range(i):
+                while same_position_ref(agents[i], agents[j], radius_robot):
+                    agents[i] = Robot(x=x(), y=y(), theta=theta())
+
+        for i in range(self.n_robots_blue):
+            pos_frame.robots_blue[i] = agents[i]
+
+        for i in range(self.n_robots_yellow):
+            pos_frame.robots_yellow[i] = agents[i+self.n_robots_blue]
+
+        return pos_frame
 
     def __move_reward(self):
         '''Calculate Move to ball reward
@@ -199,115 +268,3 @@ class SSLTestEnv(SSLBaseEnv):
         energy_penalty = - (en_penalty_1 + en_penalty_2)
         energy_penalty /= 0.02
         return energy_penalty
-
-    def _calculate_reward_and_done(self):
-        reward = 0
-        goal = False
-        w_move = 0.2
-        w_ball_grad = 0.8
-        w_energy = 2e-4
-        if self.reward_shaping_total is None:
-            self.reward_shaping_total = {'goal_score': 0, 'move': 0,
-                                         'ball_grad': 0, 'energy': 0,
-                                         'goals_blue': 0, 'goals_yellow': 0}
-
-        # Check if goal ocurred
-        if self.frame.ball.x > (self.field_params['field_length'] / 2):
-            self.reward_shaping_total['goal_score'] += 1
-            self.reward_shaping_total['goals_blue'] += 1
-            reward = 10
-            goal = True
-        elif self.frame.ball.x < -(self.field_params['field_length'] / 2):
-            self.reward_shaping_total['goal_score'] -= 1
-            self.reward_shaping_total['goals_yellow'] += 1
-            reward = -10
-            goal = True
-        else:
-
-            if self.last_frame is not None:
-                # Calculate ball potential
-                grad_ball_potential = self.__ball_grad()
-                # Calculate Move ball
-                move_reward = self.__move_reward()
-                # Calculate Energy penalty
-                energy_penalty = self.__energy_penalty()
-
-                reward = w_move * move_reward + \
-                    w_ball_grad * grad_ball_potential + \
-                    w_energy * energy_penalty
-
-                self.reward_shaping_total['move'] += w_move * move_reward
-                self.reward_shaping_total['ball_grad'] += w_ball_grad \
-                    * grad_ball_potential
-                self.reward_shaping_total['energy'] += w_energy \
-                    * energy_penalty
-
-        if goal:
-            initial_pos_frame: Frame = self._get_initial_positions_frame()
-            self.rsim.reset(initial_pos_frame)
-            self.frame = self.rsim.get_frame()
-            self.previous_ball_potential = None
-            self.last_frame = None
-
-        done = self.steps * self.time_step >= 300
-
-        return reward, done
-
-    def _get_initial_positions_frame(self):
-        '''Returns the position of each robot and ball for the inicial frame'''
-        field_half_length = self.field_params['field_length'] / 2
-        field_half_width = self.field_params['field_width'] / 2
-
-        def x(): return random.uniform(-field_half_length + 0.1,
-                                       field_half_length - 0.1)
-
-        def y(): return random.uniform(-field_half_width + 0.1,
-                                       field_half_width - 0.1)
-
-        def theta(): return random.uniform(-180, 180)
-
-        pos_frame: Frame = Frame()
-
-        pos_frame.ball.x = x()
-        pos_frame.ball.y = y()
-        pos_frame.ball.v_x = 0.
-        pos_frame.ball.v_y = 0.
-
-        agents = []
-        for i in range(self.n_robots_blue):
-            pos_frame.robots_blue[i] = Robot(x=x(), y=y(), theta=theta())
-            agents.append(pos_frame.robots_blue[i])
-
-        for i in range(self.n_robots_yellow):
-            pos_frame.robots_yellow[i] = Robot(x=x(), y=y(), theta=theta())
-            agents.append(pos_frame.robots_blue[i])
-
-        def same_position_ref(x, y, x_ref, y_ref, radius):
-            if x >= x_ref - radius and x <= x_ref + radius and \
-                    y >= y_ref - radius and y <= y_ref + radius:
-                return True
-            return False
-
-        radius_ball = 0.2
-        radius_robot = 0.2
-        same_pos = True
-
-        while same_pos:
-            for i in range(len(agents)):
-                same_pos = False
-                while same_position_ref(agents[i].x, agents[i].y, pos_frame.ball.x, pos_frame.ball.y, radius_ball):
-                    agents[i] = Robot(x=x(), y=y(), theta=theta())
-                    same_pos = True
-                for j in range(i + 1, len(agents)):
-                    while same_position_ref(agents[i].x, agents[i].y, agents[j].x, agents[j].y, radius_robot):
-                        agents[i] = Robot(x=x(), y=y(), theta=theta())
-                        same_pos = True
-
-        pos_frame.robots_blue[0] = agents[0]
-        pos_frame.robots_blue[1] = agents[1]
-        pos_frame.robots_blue[2] = agents[2]
-        pos_frame.robots_yellow[0] = agents[3]
-        pos_frame.robots_yellow[1] = agents[4]
-        pos_frame.robots_yellow[2] = agents[5]
-
-        return pos_frame
