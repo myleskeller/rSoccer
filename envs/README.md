@@ -6,9 +6,15 @@
 $ pip install -e .
 ```
 # Available Envs
+## VSS
 - **VSS3v3-v0**
 - **VSSMA-v0**
 - **VSSMAOpp-v0**
+## SSL
+- **SSLGoToBall-v0**
+- **SSLGoToBall-v1**
+- **SSLGoToBallIR-v0**
+- **SSLGoToBallIR-v1**
 
 # Example code
 ```python
