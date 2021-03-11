@@ -89,3 +89,8 @@ register(id='SSLContestedPossessionEnv-v1',
          kwargs={'random_init' : True},
          max_episode_steps=1200
          )
+
+register(id='SSLShootGoalie-v0',
+         entry_point='rc_gym.ssl.ssl_shoot_goalie:SSLShootGoalieEnv',
+         kwargs={'field_type' : 1}
+         )

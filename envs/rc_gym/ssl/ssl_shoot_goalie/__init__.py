@@ -1,0 +1,1 @@
+from rc_gym.ssl.ssl_shoot_goalie.ssl_gym_shoot_goalie import SSLShootGoalieEnv
