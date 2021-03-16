@@ -40,6 +40,7 @@ class SSLBaseEnv(gym.Env):
                                 )
         self.norm_max_v = self.rsim.linear_speed_range
         self.norm_max_w = np.rad2deg(self.rsim.angular_speed_range)
+        self.norm_max_dist = np.linalg.norm([self.field_params['field_length'], self.field_params['field_width']])
 
         # Initiate 
         self.frame: Frame = None
@@ -142,5 +143,12 @@ class SSLBaseEnv(gym.Env):
         return np.clip(
             w / self.norm_max_w,
             -self.NORM_BOUNDS,
+            self.NORM_BOUNDS
+        )
+
+    def norm_dist(self, dist):
+        return np.clip(
+            dist / self.norm_max_dist,
+            0,
             self.NORM_BOUNDS
         )

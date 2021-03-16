@@ -163,6 +163,8 @@ class RSimSSL(RSim):
 
     def _convert_speed(self, v_x, v_y):
         """converstion made to limit maximum speed in all directions"""
+        v_x *= self.linear_speed_range
+        v_y *= self.linear_speed_range
         v_norm = np.linalg.norm([v_x,v_y])
         c = v_norm < self.linear_speed_range or self.linear_speed_range / v_norm
         return v_x*c, v_y*c

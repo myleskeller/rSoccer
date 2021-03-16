@@ -2,19 +2,8 @@ from dataclasses import dataclass
 from rc_gym.ssl.ssl_shoot_goalie.geometry import *
 
 
-CENTER_GOAL_X = -6000
-CENTER_GOALY = 0
-
-LEFT_GOAL_X = -6000
-LEFT_GOALY = -600
-
-RIGHT_GOAL_X = -6000
-RIGHT_GOALY = 600
-
-ROBOT_RADIUS = 90
-
 @dataclass
-class shootGoalieState:
+class shootGoalieState():
   """Init Frame object."""
   ball_x: float = None
   ballY: float = None
@@ -33,16 +22,29 @@ class shootGoalieState:
   theta_goalie_r_sen: float = None
   theta_goalie_r_cos: float = None
 
+  def __init__(self, field_params):
+    self.CENTER_GOAL_X = -field_params['field_length']/2
+    self.CENTER_GOAL_Y = 0
+
+    self.LEFT_GOAL_X = -field_params['field_length']/2
+    self.LEFT_GOAL_Y = -field_params['goal_width']/2
+
+    self.RIGHT_GOAL_X = -field_params['field_length']/2
+    self.RIGHT_GOAL_Y = field_params['goal_width']/2
+
+    self.ROBOT_RADIUS = 90
+
+
   def getDistance(self, frame) -> float:
-    return float(mod(abs(frame.robots_blue[0].x-CENTER_GOAL_X), abs(frame.robots_blue[0].y-CENTER_GOALY)))
+    return float(mod(abs(frame.robots_blue[0].x-self.CENTER_GOAL_X), abs(frame.robots_blue[0].y-self.CENTER_GOAL_Y)))
 
   def getLeftPoleAngle(self, frame):
-    dist_left = [frame.robots_blue[0].x - LEFT_GOAL_X, frame.robots_blue[0].y - LEFT_GOALY]
+    dist_left = [frame.robots_blue[0].x - self.LEFT_GOAL_X, frame.robots_blue[0].y - self.LEFT_GOAL_Y]
     angle_left = toPiRange(angle(dist_left[0], dist_left[1]) + (math.pi - frame.robots_blue[0].theta))
     return math.sin(angle_left), math.cos(angle_left)
 
   def getRightPoleAngle(self, frame):
-    dist_right = [frame.robots_blue[0].x - RIGHT_GOAL_X, frame.robots_blue[0].y - RIGHT_GOALY]
+    dist_right = [frame.robots_blue[0].x - self.RIGHT_GOAL_X, frame.robots_blue[0].y - self.RIGHT_GOAL_Y]
     angle_right = toPiRange(angle(dist_right[0], dist_right[1]) + (math.pi - frame.robots_blue[0].theta))
     return math.sin(angle_right), math.cos(angle_right)
 
@@ -56,12 +58,12 @@ class shootGoalieState:
     return math.sin(angle_c), math.cos(angle_c)
 
   def getGoalieLeftAngle(self, frame):
-    dist_left = [frame.robots_blue[0].x - frame.robots_yellow[0].x, frame.robots_blue[0].y - (frame.robots_yellow[0].y - ROBOT_RADIUS)]
+    dist_left = [frame.robots_blue[0].x - frame.robots_yellow[0].x, frame.robots_blue[0].y - (frame.robots_yellow[0].y - self.ROBOT_RADIUS)]
     angle_left = toPiRange(angle(dist_left[0], dist_left[1]) + (math.pi - frame.robots_blue[0].theta))
     return math.sin(angle_left), math.cos(angle_left)
 
   def getGoalieRightAngle(self, frame):
-    dist_right = [frame.robots_blue[0].x - frame.robots_yellow[0].x, frame.robots_blue[0].y - (frame.robots_yellow[0].y + ROBOT_RADIUS)]
+    dist_right = [frame.robots_blue[0].x - frame.robots_yellow[0].x, frame.robots_blue[0].y - (frame.robots_yellow[0].y + self.ROBOT_RADIUS)]
     angle_right = toPiRange(angle(dist_right[0], dist_right[1]) + (math.pi - frame.robots_blue[0].theta))
     return math.sin(angle_right), math.cos(angle_right)
   
@@ -80,37 +82,3 @@ class shootGoalieState:
     robot_ball_vx = mod_to_ball* math.cos(angle_to_ball)
     robot_ball_vy = mod_to_ball* math.sin(angle_to_ball)
     return robot_ball_vx, robot_ball_vy
-
-  
-  def getObservation(self, frame):
-
-    self.ball_x, self.ballY = self.getBallLocalCoordinates(frame)
-    self.ball_vx, self.ball_vy = self.getBallLocalSpeed(frame)
-    
-    self.distance = self.getDistance(frame)
-    self.robot_w = frame.robots_blue[0].v_theta
-    self.theta_l_sen, self.theta_l_cos = self.getLeftPoleAngle(frame)
-    self.theta_r_sen, self.theta_r_cos = self.getRightPoleAngle(frame)
-    self.theta_goalie_c_sen, self.theta_goalie_c_cos = self.getGoalieCenterAngle(frame)
-    self.theta_goalie_l_sen, self.theta_l_cos = self.getGoalieLeftAngle(frame)
-    self.theta_goalie_r_sen, self.theta_r_cos = self.getGoalieRightAngle(frame)
-    
-    observation = []
-
-    observation.append(self.ball_x) 
-    observation.append(self.ballY) 
-    observation.append(self.ball_vx) 
-    observation.append(self.ball_vy) 
-    observation.append(self.robot_w)
-    observation.append(self.distance)
-    observation.append(self.theta_l_sen)
-    observation.append(self.theta_l_cos)
-    observation.append(self.theta_r_sen) 
-    observation.append(self.theta_r_cos)
-    observation.append(self.theta_goalie_c_sen)
-    observation.append(self.theta_goalie_c_cos)
-    observation.append(self.theta_goalie_l_sen)
-    observation.append(self.theta_l_cos)
-    observation.append(self.theta_goalie_r_sen)
-    observation.append(self.theta_r_cos)
-    return observation

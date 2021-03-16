@@ -52,34 +52,57 @@ class SSLShootGoalieEnv(SSLBaseEnv):
         super().__init__(field_type=field_type, n_robots_blue=1,
                          n_robots_yellow=1, time_step=0.032)
 
-        actSpaceThresholds = np.array([math.pi * 3, 6.5], dtype=np.float32)
-        self.action_space = gym.spaces.Box(low=-actSpaceThresholds, high=actSpaceThresholds,
+        self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(2, ), dtype=np.float32)
 
         n_obs = 16
-        obsSpaceThresholds = np.array([7000, 6000, 10000, 10000, math.pi * 3, 10000, math.pi, math.pi,
-                                       math.pi, math.pi, math.pi, math.pi, math.pi, math.pi, math.pi, math.pi], dtype=np.float32)
-        self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds,
-                                                high=obsSpaceThresholds,
+        self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
+                                                high=self.NORM_BOUNDS,
                                                 shape=(n_obs, ),
                                                 dtype=np.float32)
+
+        self.shootGoalieState = shootGoalieState(field_params=self.field_params)
 
         print('Environment initialized')
 
     def _frame_to_observations(self):
 
+        ball_x, ball_y = self.shootGoalieState.getBallLocalCoordinates(self.frame)
+        ball_vx, ball_vy = self.shootGoalieState.getBallLocalSpeed(self.frame)
+        
+        distance = self.shootGoalieState.getDistance(self.frame)
+        robot_w = self.frame.robots_blue[0].v_theta
+        theta_l_sen, theta_l_cos = self.shootGoalieState.getLeftPoleAngle(self.frame)
+        theta_r_sen, theta_r_cos = self.shootGoalieState.getRightPoleAngle(self.frame)
+        theta_goalie_c_sen, theta_goalie_c_cos = self.shootGoalieState.getGoalieCenterAngle(self.frame)
+        theta_goalie_l_sen, theta_l_cos = self.shootGoalieState.getGoalieLeftAngle(self.frame)
+        theta_goalie_r_sen, theta_r_cos = self.shootGoalieState.getGoalieRightAngle(self.frame)
+        
         observation = []
 
-        self.shootGoalieState = shootGoalieState()
-        observation = self.shootGoalieState.getObservation(self.frame)
-
+        observation.append(self.norm_dist(distance))
+        observation.append(self.norm_pos(ball_x)) 
+        observation.append(self.norm_pos(ball_y)) 
+        observation.append(self.norm_v(ball_vx)) 
+        observation.append(self.norm_v(ball_vy)) 
+        observation.append(self.norm_w(robot_w))
+        observation.append(theta_l_sen)
+        observation.append(theta_l_cos)
+        observation.append(theta_r_sen) 
+        observation.append(theta_r_cos)
+        observation.append(theta_goalie_c_sen)
+        observation.append(theta_goalie_c_cos)
+        observation.append(theta_goalie_l_sen)
+        observation.append(theta_l_cos)
+        observation.append(theta_goalie_r_sen)
+        observation.append(theta_r_cos)
         return np.array(observation, dtype=np.float32)
 
     def _get_commands(self, actions):
         commands = []
 
         commands.append(
-            Robot(yellow=False, id=0, v_theta=actions[0]/10, kick_v_x=0, dribbler=True))
+            Robot(yellow=False, id=0, v_theta=actions[0], kick_v_x= 1 if actions[1] > 0.2 else 0, dribbler=True))
         
         
         # Moving GOALIE
@@ -93,7 +116,7 @@ class SSLShootGoalieEnv(SSLBaseEnv):
             vy = 0
 
         cmdGoalie = self._getCorrectGKCommand(vy)
-
+        print (cmdGoalie)
         commands.append(cmdGoalie)
 
         return commands
