@@ -18,34 +18,31 @@ class SSLShootGoalieEnv(SSLBaseEnv):
    Observation:
      Type: Box(16)
      Num     Observation                                       Min                     Max
-     0       Ball X   (mm)                                   -7000                   7000
-     1       Ball Y   (mm)                                   -6000                   6000
-     2       Ball Vx  (mm/s)                                 -10000                  10000
-     3       Ball Vy  (mm/s)                                 -10000                  10000
-     4       Blue id 0 Robot Vw       (rad/s)                -math.pi * 3            math.pi * 3
-     5       Dist Blue id0 - goal center (mm)                -10000                  10000
-     6       Angle between blue id 0 and goal left (rad)     -math.pi                math.pi
-     7       Angle between blue id 0 and goal left (rad)     -math.pi                math.pi
-     8       Angle between blue id 0 and goal right (rad)    -math.pi                math.pi
-     9       Angle between blue id 0 and goal right (rad)    -math.pi                math.pi
-     10      Angle between blue id 0 and goalie center(rad)  -math.pi                math.pi
-     11      Angle between blue id 0 and goalie center(rad)  -math.pi                math.pi
-     12      Angle between blue id 0 and goalie left (rad)   -math.pi                math.pi
-     13      Angle between blue id 0 and goalie left (rad)   -math.pi                math.pi
-     14      Angle between blue id 0 and goalie right (rad)  -math.pi                math.pi
-     15      Angle between blue id 0 and goalie right (rad)  -math.pi                math.pi
+     0       Ball X   (m)                                  -field_lenth/2           field_lenth/2
+     1       Ball Y   (m)                                  -field_width/2           field_width/2
+     2       Ball Vx  (m/s)                                  -6.5 m/s                 6.5 m/s
+     3       Ball Vy  (m/s)                                  -6.5 m/s                 6.5 m/s
+     4       Blue id 0 Robot Vw       (rad/s)                -10 rad/s                10 rad/s
+     5       Dist Blue id0 - goal center (m)                   0            norm(field_lenth, field_width)
+     6       Angle between blue id 0 and goal left (cos)       -1                         1
+     7       Angle between blue id 0 and goal left (sin)       -1                         1
+     8       Angle between blue id 0 and goal right (cos)      -1                         1
+     9       Angle between blue id 0 and goal right (sin)      -1                         1
+     10      Angle between blue id 0 and goalie center(cos)    -1                         1
+     11      Angle between blue id 0 and goalie center(sin)    -1                         1
+     12      Angle between blue id 0 and goalie left (cos)     -1                         1
+     13      Angle between blue id 0 and goalie left (sin)     -1                         1
+     14      Angle between blue id 0 and goalie right (cos)    -1                         1
+     15      Angle between blue id 0 and goalie right (sin)    -1                         1
    Actions:
      Type: Box(2)
      Num     Action                        Min                     Max
-     0       Blue id 0 Vw (rad/s)        -math.pi * 3            math.pi * 3
-     1       Blue Kick Strength (m/s)        -6.5                   6.5
+     0       Blue id 0 Vw (rad/s)       -10 rad/s                10 rad/s
+     1       Blue Kick Strength (m/s)     -6.5 m/s                6.5 m/s
    Reward:
-     Reward is 1 for success, -1 to fails. 0 otherwise.
-   Starting State:
-     All observations are assigned a uniform random value in [-0.05..0.05]
-     # TODO
+     Reward is 2 for goal, -0.3 for ball outside of field, -0.01 otherwise.
    Episode Termination:
-     # TODO
+     # Goal, or ball outside of field.
    """
 
     def __init__(self, field_type=1):
