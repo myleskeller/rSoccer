@@ -2,7 +2,7 @@ import gym
 import rc_gym
 
 # Using penalty env
-env = gym.make('SSLShootGoalie-v0')
+env = gym.make('SSLGoalie-v0')
 
 env.reset()
 # Run for 1 episode and print reward at the end

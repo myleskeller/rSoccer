@@ -94,3 +94,8 @@ register(id='SSLShootGoalie-v0',
          entry_point='rc_gym.ssl.ssl_shoot_goalie:SSLShootGoalieEnv',
          kwargs={'field_type' : 1}
          )
+
+register(id='SSLGoalie-v0',
+         entry_point='rc_gym.ssl.ssl_goalie:SSLGoalieEnv',
+         kwargs={'field_type' : 1}
+         )
