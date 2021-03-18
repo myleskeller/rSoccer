@@ -14,7 +14,7 @@ from rc_gym.ssl.ssl_goalie.geometry import mod
 class SSLGoalieEnv(SSLBaseEnv):
     """
    Description:
-     SSL Robot scoaring goal with a mobile GoalKeeper
+     SSL GoalKeeper robot to defend from an Attacker shoot.
    Observation:
      Type: Box(16)
      Num     Observation                                       Min                     Max
@@ -42,7 +42,7 @@ class SSLGoalieEnv(SSLBaseEnv):
      1       Blue id 0 Vx (m/s)         -6.5 m/s                6.5 m/s
      2       Blue id 0 Vy (m/s)         -6.5 m/s                6.5 m/s
    Reward:
-     Reward is 2 for goal, -0.3 for ball outside of field, -0.01 otherwise.
+     Reward is 1 for goal defended, -1 for goal, and 0 for ball stand.
    Episode Termination:
      # Goal, or ball outside of field.
    """
