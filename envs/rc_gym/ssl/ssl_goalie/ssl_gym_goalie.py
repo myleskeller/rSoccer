@@ -135,7 +135,7 @@ class SSLGoalieEnv(SSLBaseEnv):
             done = True
             reward = 0
 
-        return reward, False
+        return reward, done
 
     
 

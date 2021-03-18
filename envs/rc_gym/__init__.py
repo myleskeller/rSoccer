@@ -92,7 +92,12 @@ register(id='SSLContestedPossessionEnv-v1',
 
 register(id='SSLShootGoalie-v0',
          entry_point='rc_gym.ssl.ssl_shoot_goalie:SSLShootGoalieEnv',
-         kwargs={'field_type' : 1}
+         kwargs={'field_type' : 1, 'sparce_reward': True}
+         )
+
+register(id='SSLShootGoalie-v1',
+         entry_point='rc_gym.ssl.ssl_shoot_goalie:SSLShootGoalieEnv',
+         kwargs={'field_type' : 1, 'sparce_reward': False}
          )
 
 register(id='SSLGoalie-v0',

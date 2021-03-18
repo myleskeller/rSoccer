@@ -45,13 +45,14 @@ class SSLShootGoalieEnv(SSLBaseEnv):
      # Goal, or ball outside of field.
    """
 
-    def __init__(self, field_type=1):
+    def __init__(self, field_type=1, sparce_reward=True):
         super().__init__(field_type=field_type, n_robots_blue=1,
                          n_robots_yellow=1, time_step=0.032)
 
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(2, ), dtype=np.float32)
-
+        
+        self.sparce_reward = sparce_reward
         n_obs = 16
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
@@ -113,13 +114,16 @@ class SSLShootGoalieEnv(SSLBaseEnv):
             vy = 0
 
         cmdGoalie = self._getCorrectGKCommand(vy)
-        print (cmdGoalie)
         commands.append(cmdGoalie)
 
         return commands
 
     def _calculate_reward_and_done(self):
-        return self._penalizeRewardFunction()
+
+        if self.sparce_reward:
+            return self._sparseReward()
+        else:
+            return self._penalizeRewardFunction()
 
     def _sparseReward(self):
         field_half_length = self.field_params['field_length'] / 2
