@@ -114,6 +114,7 @@ class SSLShootGoalieEnv(SSLBaseEnv):
             vy = 0
 
         cmdGoalie = self._getCorrectGKCommand(vy)
+        
         commands.append(cmdGoalie)
 
         return commands
