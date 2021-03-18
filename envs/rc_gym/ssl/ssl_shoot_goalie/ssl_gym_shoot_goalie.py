@@ -100,7 +100,7 @@ class SSLShootGoalieEnv(SSLBaseEnv):
         commands = []
 
         commands.append(
-            Robot(yellow=False, id=0, v_theta=actions[0], kick_v_x= 1 if actions[1] > 0.2 else 0, dribbler=True))
+            Robot(yellow=False, id=0, v_theta=actions[0], kick_v_x= 0.8 if actions[1] > 0.2 else 0, dribbler=True))
         
         
         # Moving GOALIE
@@ -151,6 +151,7 @@ class SSLShootGoalieEnv(SSLBaseEnv):
             # 1 cm/s
             done = True
             reward = -1
+        
 
         return reward, done
 
@@ -167,10 +168,15 @@ class SSLShootGoalieEnv(SSLBaseEnv):
             if self.frame.ball.y < goal_width/2 and self.frame.ball.y > -goal_width/2:
                 # ball entered the goal
                 reward = 2
-        elif self.frame.ball.x < -(field_half_length-1) and self.frame.ball.v_x > -0.01:
+        elif self.frame.ball.x < -(field_half_length-1) and self.frame.ball.v_x > -0.1:
             # goalkeeper caught the ball
             done = True
             reward = -0.3
+        elif mod(self.frame.ball.v_x, self.frame.ball.v_y) < 0.01 and self.steps > 15:
+            # 1 cm/s
+            done = True
+            reward = -0.3
+    
 
         return reward, done
 
@@ -187,8 +193,8 @@ class SSLShootGoalieEnv(SSLBaseEnv):
         attacker_y = random.uniform(-field_half_width/2, field_half_width/2)
         robot_theta = random.uniform(-180, 180)
 
-        ball_x = attacker_x - 0.09*math.cos(math.radians(robot_theta+180))
-        ball_y = attacker_y - 0.09*math.sin(math.radians(robot_theta+180))
+        ball_x = attacker_x - 0.1*math.cos(math.radians(robot_theta+180))
+        ball_y = attacker_y - 0.1*math.sin(math.radians(robot_theta+180))
 
         pos_frame.ball.x = ball_x
         pos_frame.ball.y = ball_y
