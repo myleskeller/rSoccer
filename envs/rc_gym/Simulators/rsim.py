@@ -1,7 +1,7 @@
 import robosim
 import numpy as np
 from typing import Dict, List
-from rc_gym.Entities import Frame, FrameVSS, FrameSSL
+from rc_gym.Entities import Frame, FrameVSS, FrameSSL, Field
 
 
 class RSim:
@@ -39,7 +39,7 @@ class RSim:
         raise NotImplementedError
 
     def get_field_params(self):
-        return self.simulator.get_field_params()
+        return Field(**self.simulator.get_field_params())
     
     def _placement_dict_from_frame(self, frame: Frame):
         replacement_pos: Dict[str, np.ndarray] = {}
