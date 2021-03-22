@@ -54,13 +54,15 @@ class VSSBaseEnv(gym.Env):
         self.steps += 1
         # Join agent action with environment actions
         commands: List[Robot] = self._get_commands(action)
+        print(commands)
         # Send command to simulator
         self.rsim.send_commands(commands)
         self.sent_commands = commands
-
+        print("aqui")
         # Get Frame from simulator
         self.last_frame = self.frame
         self.frame = self.rsim.get_frame()
+        print("aqui")
 
         # Calculate environment observation, reward and done condition
         observation = self._frame_to_observations()

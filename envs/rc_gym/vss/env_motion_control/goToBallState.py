@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from libs.Utils import *
+from rc_gym.vss.env_motion_control.Utils import *
 
 
 TOP_FIELD = 0.75
@@ -33,29 +33,29 @@ class goToBallState:
 
   def getTopPosition(self, frame):
     diff_y = TOP_FIELD - frame.robots_blue[0].y
-    pos_x = math.sin(frame.robots_blue[0].orientation) * diff_y
-    pos_y = math.cos(frame.robots_blue[0].orientation) * diff_y
+    pos_x = math.sin(frame.robots_blue[0].theta) * diff_y
+    pos_y = math.cos(frame.robots_blue[0].theta) * diff_y
     #print(pos_x, pos_y)
     return pos_x, pos_y
 
   def getBottomPosition(self, frame):
     diff_y = BOTTOM_FIELD - frame.robots_blue[0].y
-    pos_x = math.sin(frame.robots_blue[0].orientation) * diff_y
-    pos_y = math.cos(frame.robots_blue[0].orientation) * diff_y
+    pos_x = math.sin(frame.robots_blue[0].theta) * diff_y
+    pos_y = math.cos(frame.robots_blue[0].theta) * diff_y
     #print(pos_x, pos_y)
     return pos_x, pos_y
 
   def getLeftPosition(self, frame):
     diff_y = LEFT_FIELD - frame.robots_blue[0].x
-    pos_x = math.cos(frame.robots_blue[0].orientation) * diff_y
-    pos_y = -math.sin(frame.robots_blue[0].orientation) * diff_y
+    pos_x = math.cos(frame.robots_blue[0].theta) * diff_y
+    pos_y = -math.sin(frame.robots_blue[0].theta) * diff_y
     #print(pos_x, pos_y)
     return pos_x, pos_y 
 
   def getRightPosition(self, frame):
     diff_y = RIGHT_FIELD - frame.robots_blue[0].x
-    pos_x = math.cos(frame.robots_blue[0].orientation) * diff_y
-    pos_y = -math.sin(frame.robots_blue[0].orientation) * diff_y
+    pos_x = math.cos(frame.robots_blue[0].theta) * diff_y
+    pos_y = -math.sin(frame.robots_blue[0].theta) * diff_y
     #print(pos_x, pos_y)
     return pos_x, pos_y  
 
@@ -84,23 +84,23 @@ class goToBallState:
     #print(angle_relative)
     #
     robot_ball = [frame.robots_blue[0].x - frame.ball.x, frame.robots_blue[0].y - frame.ball.y]
-    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - frame.robots_blue[0].orientation))
+    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - frame.robots_blue[0].theta))
     #print(angle_to_ball)
     return angle_to_ball
 
   def getBallLocalCoordinates(self, frame):
     robot_ball = [frame.robots_blue[0].x - frame.ball.x, frame.robots_blue[0].y - frame.ball.y]
     mod_to_ball = mod(robot_ball[0], robot_ball[1])
-    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - frame.robots_blue[0].orientation))
+    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - frame.robots_blue[0].theta))
     robot_ball_x = mod_to_ball* math.cos(angle_to_ball)
     robot_ball_y = mod_to_ball* math.sin(angle_to_ball)
     #print(robot_ball_x, robot_ball_y)
     return robot_ball_x, robot_ball_y
   
   def getBallLocalSpeed(self, frame):
-    robot_ball = [frame.robots_blue[0].vx - frame.ball.vx, frame.robots_blue[0].vy - frame.ball.vy]
+    robot_ball = [frame.robots_blue[0].v_x - frame.ball.v_x, frame.robots_blue[0].v_y - frame.ball.v_y]
     mod_to_ball = mod(robot_ball[0], robot_ball[1])
-    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - frame.robots_blue[0].orientation))
+    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - frame.robots_blue[0].theta))
     robot_ball_vx = mod_to_ball* math.cos(angle_to_ball)
     robot_ball_vy = mod_to_ball* math.sin(angle_to_ball)
     return robot_ball_vx, robot_ball_vy
@@ -114,11 +114,11 @@ class goToBallState:
     #print(self.ball_x, self.ball_y)
     #self.ball_x, self.ball_y = frame.ball.x, frame.ball.y
     self.ball_vx, self.ball_vy = self.getBallLocalSpeed(frame)
-    self.robot_vx = frame.robots_blue[0].vx
-    self.robot_vy = frame.robots_blue[0].vy
+    self.robot_vx = frame.robots_blue[0].v_x
+    self.robot_vy = frame.robots_blue[0].v_y
     
     self.distance = self.getDistance(frame)
-    self.robot_w = frame.robots_blue[0].vorientation
+    self.robot_w = frame.robots_blue[0].v_theta
     self.wall_top_x, self.wall_top_y = self.getTopPosition(frame)
     self.wall_bottom_x, self.wall_bottom_y = self.getBottomPosition(frame)   
     self.wall_left_x, self.wall_left_y = self.getLeftPosition(frame)
