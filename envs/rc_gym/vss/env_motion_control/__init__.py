@@ -1,1 +1,2 @@
-from rc_gym.vss.env_gk.vss_gk import rSimVSSGK
+from rc_gym.vss.env_motion_control.goToBallEnv import goToBallEnv
+from rc_gym.vss.env_motion_control.goToBallState import goToBallState

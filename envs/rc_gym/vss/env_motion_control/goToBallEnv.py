@@ -8,7 +8,7 @@ import random
 #from libs.fira_client import FiraClient
 from rc_gym.vss.vss_gym_base import VSSBaseEnv
 from rc_gym.Entities import Robot, Ball, Frame
-from rc_gym.vss.env_motion_control import goToBallState
+from rc_gym.vss.env_motion_control.goToBallState import goToBallState
 #from rc_gym.Utils import *
 
 class goToBallEnv(VSSBaseEnv):
@@ -47,10 +47,12 @@ class goToBallEnv(VSSBaseEnv):
     # TODO
   """
   def __init__(self):
-    super().__init__()
+    super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
+                     time_step=0.032)
     ## Action Space
-    actSpaceThresholds = np.array([100, 100], dtype=np.float32)
-    self.action_space = gym.spaces.Box(low=-actSpaceThresholds, high=actSpaceThresholds)
+    actSpaceThresholds = np.array([1, 1], dtype=np.float32)
+    self.action_space = gym.spaces.Box(low=-1, high=1,
+                                        shape=(2, ), dtype=np.float32)
 
 
     # Observation Space thresholds
@@ -72,6 +74,7 @@ class goToBallEnv(VSSBaseEnv):
     #self.energy_penalty = -(abs(v_wheel1 * 100) + abs(v_wheel2 * 100))
     commands.append(Robot(yellow=False, id=0, v_wheel1=v_wheel1,
                           v_wheel2=v_wheel2))
+    return commands
 
   def _frame_to_observations(self):
     observation = []
@@ -82,7 +85,7 @@ class goToBallEnv(VSSBaseEnv):
 
     return np.array(observation)
 
-  def __get_initial_positions_frame(self):
+  def _get_initial_positions_frame(self):
     posFrame = Frame()
     #To CHANGE: 
     # ball penalty position
@@ -120,10 +123,10 @@ class goToBallEnv(VSSBaseEnv):
     #rewardAngle -=(0.02*(self.goToBallState.angle_relative - self.angleAnt))/dt
 
     self.distAnt = self.goToBallState.distance
-    self.timestampAnt = self.data.step
+    self.timestampAnt = self.step
     self.angleAnt = self.goToBallState.angle_relative
     #print(self.goToBallState.distance)
-    if self.data.frame.ball.x < -0.75 or self.data.frame.ball.y > 0.65 or self.data.frame.ball.y < -0.65 or  self.data.frame.ball.x > 0.75:
+    if self.frame.ball.x < -0.75 or self.frame.ball.y > 0.65 or self.frame.ball.y < -0.65 or  self.frame.ball.x > 0.75:
       # the ball out the field limits
       done = True
       rewardContact += 0
