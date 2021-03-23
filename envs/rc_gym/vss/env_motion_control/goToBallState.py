@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from rc_gym.vss.env_motion_control.Utils import *
-
+import deterministic_vss.univector as univector
 
 TOP_FIELD = 0.75
 BOTTOM_FIELD = -0.75
@@ -129,9 +129,11 @@ class goToBallState:
     
     
     observation = []
-
-    observation.append(self.ball_x) 
-    observation.append(self.ball_y) 
+    objective_pos = run_planning(frame,0,True)
+    #observation.append(self.ball_x) 
+    #observation.append(self.ball_y)
+    observation.append(objective_pos[0]) 
+    observation.append(objective_pos[1])  
     observation.append(self.robot_vx) 
     observation.append(self.robot_vy) 
     observation.append(self.robot_w)
@@ -146,3 +148,70 @@ class goToBallState:
     #observation.append(self.wall_right_y)
     
     return observation
+
+  def run_planning(frame, index, yellow):
+    width = 1.3/2.0
+    lenght = (1.5/2.0) + 0.1
+
+    ball = frame.ball
+    robot = frame.robots_yellow[index] if yellow else frame.robots_blue[index]
+
+    if yellow:
+        angle_rob = np.deg2rad(robot.theta)
+        robot_pos = ((lenght + robot.x)*100, (width + robot.y) * 100)
+        ball_pos = ((lenght + ball.x) * 100, (width + ball.y) * 100)
+        ball_speed = (ball.v_x * 100, ball.v_y * 100)
+
+        allies = []
+        for i in range(len(frame.robots_yellow)):
+            robot = frame.robots_yellow[i]
+            allies.append(((lenght + robot.x) * 100, (width + robot.y) * 100))
+        enemies = []
+        for i in range(len(frame.robots_blue)):
+            robot = frame.robots_blue[i]
+            enemies.append(((lenght + robot.x) * 100, (width + robot.y) * 100))
+    else:
+        angle_rob = np.deg2rad(robot.theta + 180)
+        if angle_rob > math.pi:
+            angle_rob -= 2*math.pi
+        elif angle_rob < -math.pi:
+            angle_rob += 2*math.pi
+        robot_pos = ((lenght - robot.x) * 100,(width - robot.y) * 100)
+        ball_pos = ((lenght -ball.x) * 100, (width - ball.y) * 100)
+        ball_speed = (-ball.v_x * 100, -ball.v_y * 100)
+
+        allies = []
+        for i in frame.robots_blue:
+            robot = frame.robots_blue[i]
+            allies.append(((lenght - robot.x) * 100,(width - robot.y) * 100))
+        enemies = []
+        for i in frame.robots_yellow:
+            robot = frame.robots_yellow[i]
+            enemies.append(((lenght - robot.x) * 100,(width - robot.y) * 100))
+
+    #print(angle_rob)
+    return univector.update(robot_pos,ball_pos,ball_pos,math.pi,allies,enemies,index)
+    '''obj_pos = None
+    
+    obj_pos = beh.decideAction(ball_pos, ball_speed, robot_pos)
+  
+
+    #print(obj_pos)
+    ret = None
+    if(obj_pos == None):
+        speeds = utils.spin(robot_pos, ball_pos, ball_speed)
+        ret = (speeds[0], speeds[1])
+
+    else:
+        if(goalie):
+            next_step = univectorPosture.update(robot_pos,ball_pos,obj_pos,allies,enemies,index)
+            speeds = p.run(angle_rob, next_step, robot_pos)
+        else:
+            next_step = univectorPosture.update(robot_pos,ball_pos,obj_pos,allies,enemies,index)
+            speeds = p.run(angle_rob, next_step, robot_pos)
+        ret = (speeds[0], speeds[1])
+    
+    if(yellow):
+        return (ret[1], ret[0])
+    else:
+        return ret'''
