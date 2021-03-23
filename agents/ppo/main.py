@@ -1,7 +1,3 @@
-"""
-@author: Viet Nguyen <nhviet1009@gmail.com>
-"""
-
 import argparse
 import os
 import shutil
@@ -11,6 +7,7 @@ import numpy as np
 import torch
 import torch.multiprocessing as _mp
 import torch.nn.functional as F
+import wandb
 from torch.distributions import Categorical
 
 from env import MultipleEnvironments
@@ -35,7 +32,7 @@ def get_args():
                         help='parameter for Clipped Surrogate Objective')
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--num_epochs', type=int, default=10)
-    parser.add_argument("--num_local_steps", type=int, default=9375)
+    parser.add_argument("--num_steps", type=int, default=9375)
     parser.add_argument("--num_episodes", type=int, default=2134)
     parser.add_argument("--num_processes", type=int, default=4)
     parser.add_argument("--save_interval", type=int, default=10,
@@ -55,6 +52,9 @@ def get_args():
 
 
 def main(opt):
+    wandb.init(name=opt.env_id+'-PPO',
+                   project='RC-Reinforcement',
+                   dir='./logs')
     DEVICE = torch.device('cuda') if opt.cuda else torch.device('cpu')
     if torch.cuda.is_available():
         torch.cuda.manual_seed(123)
@@ -90,8 +90,9 @@ def main(opt):
         states = []
         rewards = []
         dones = []
+        infos = []
         then = time.time()
-        for _ in range(opt.num_local_steps):
+        for _ in range(opt.num_steps):
             states.append(curr_states)
             actor_out, value = model(curr_states.to(DEVICE))
             action, old_log_policy = actor_out
@@ -110,14 +111,15 @@ def main(opt):
             done = torch.FloatTensor(done)
             rewards.append(reward)
             dones.append(done)
+            infos.append(info)
             curr_states = state
 
         rew_avg = torch.cat(rewards).sum()/opt.num_processes
         rew_avg = rew_avg.item()
         print('Average final reward per env:', rew_avg)
-        fps = opt.num_local_steps/(time.time() - then)
+        fps = opt.num_steps*opt.num_processes/(time.time() - then)
         then = time.time()
-        print('FPS:', fps*opt.num_processes)
+        print('FPS:', fps)
         _, next_value, = model(curr_states.to(DEVICE))
         next_value = next_value.squeeze().cpu()
         old_log_policies = torch.cat(old_log_policies).detach()
@@ -136,10 +138,9 @@ def main(opt):
         R = torch.cat(R).detach()
         advantages = R - values
         for i in range(opt.num_epochs):
-            indice = torch.randperm(
-                opt.num_local_steps * opt.num_processes)
+            indice = torch.randperm(opt.num_steps * opt.num_processes)
             for j in range(opt.batch_size):
-                total_steps = opt.num_local_steps * opt.num_processes
+                total_steps = opt.num_steps * opt.num_processes
                 num_batches = total_steps//opt.batch_size
                 batch_indices = indice[j*num_batches:(j + 1)*num_batches]
                 actor_outputs, value = model(states[batch_indices].to(DEVICE))
@@ -162,6 +163,12 @@ def main(opt):
                 total_loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
                 optimizer.step()
+        log_dict = {"rw/Avg_rew": rew_avg, "FPS": fps}
+        log_dict['Loss/Actor'] = actor_loss
+        log_dict['Loss/Critic'] = critic_loss
+        log_dict['Loss/Entropy'] = entropy_loss
+        log_dict['Loss/Total'] = total_loss
+        wandb.log(log_dict)
         print("Episode: {}. Total loss: {}".format(curr_episode, total_loss))
         print('--------------------------------\n')
 
