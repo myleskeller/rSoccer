@@ -1,5 +1,5 @@
 import math
-import deterministic_vss.Field as Field
+import rc_gym.vss.env_motion_control.deterministic_vss.Field as Field
 
 halfAxis = 3.75
 
