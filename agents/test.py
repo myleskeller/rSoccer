@@ -10,7 +10,7 @@ env = gym.make('VSSMotionControl-v0')
 for i in range(1000):
     env.reset()
     done = False
-    while not done:
+    while False: #not done:
         action = env.action_space.sample()
         next_state, reward, done, _ = env.step(action)
         env.render()

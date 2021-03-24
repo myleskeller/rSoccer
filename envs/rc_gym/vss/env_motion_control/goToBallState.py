@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from rc_gym.vss.env_motion_control.Utils import *
-import deterministic_vss.univector as univector
+import rc_gym.vss.env_motion_control.deterministic_vss.univector as univector
 
 TOP_FIELD = 0.75
 BOTTOM_FIELD = -0.75
@@ -129,7 +129,7 @@ class goToBallState:
     
     
     observation = []
-    objective_pos = run_planning(frame,0,True)
+    objective_pos = self.run_planning(frame,0,True)
     #observation.append(self.ball_x) 
     #observation.append(self.ball_y)
     observation.append(objective_pos[0]) 
@@ -149,7 +149,7 @@ class goToBallState:
     
     return observation
 
-  def run_planning(frame, index, yellow):
+  def run_planning(self, frame, index, yellow):
     width = 1.3/2.0
     lenght = (1.5/2.0) + 0.1
 
@@ -190,7 +190,9 @@ class goToBallState:
             enemies.append(((lenght - robot.x) * 100,(width - robot.y) * 100))
 
     #print(angle_rob)
-    return univector.update(robot_pos,ball_pos,ball_pos,math.pi,allies,enemies,index)
+    path = univector.update(robot_pos,ball_pos,ball_pos,math.pi,allies,enemies,index)
+    print(path)
+    return path[0]
     '''obj_pos = None
     
     obj_pos = beh.decideAction(ball_pos, ball_speed, robot_pos)

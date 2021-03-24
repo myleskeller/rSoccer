@@ -4,8 +4,8 @@ m_kR = 6.15
 m_delta = 4.57
 m_d = 1
 
-import deterministic_vss.utils as utils
-import deterministic_vss.Field as Field
+import rc_gym.vss.env_motion_control.deterministic_vss.utils as utils
+import rc_gym.vss.env_motion_control.deterministic_vss.Field as Field
 import math
 
 def moveToGoalField(source, target, thetaDir, position):
@@ -105,7 +105,7 @@ def getVectorDirection(thetaDir, canProject, position, curPos, objPos):
 
 def update(robotPos, ballPos, objectivePos, objectiveAngle, allies, enemies, index):
 
-    iterations = 3
+    iterations = 5
     curPos = robotPos
     angleBallGoal = objectiveAngle
     thetaDir = angleBallGoal
@@ -115,50 +115,57 @@ def update(robotPos, ballPos, objectivePos, objectiveAngle, allies, enemies, ind
     if(ballPos[1] > 105 or ballPos[1] < 25):
         canProject = False
     
-
-    for i in range(iterations):
+    print("ROBOT    ", robotPos)
+    print("OBJECTIVE ", objectivePos)
+    i=0
+    path =[]
+    while (utils.euclideanDistance(curPos, objectivePos)>10.0):
+        i +=1
         angle = getVectorDirection(thetaDir, canProject, robotPos, curPos, objectivePos)
 
         curPos = (curPos[0] + math.cos(angle) * 5, curPos[1] + math.sin(angle) * 5)
+        if(i%2==0 or utils.euclideanDistance(curPos, objectivePos)>10.0):
+            path.append(curPos)
+            #print(curPos)
 
 
     angle = getVectorDirection(thetaDir, canProject,robotPos,robotPos,objectivePos)
     
-    safe = True
-
-    for i in range(len(allies)):
-        if (i == index):
-            continue
-        if(utils.insideOurArea(allies[i],0,0)):
-            safe = False
-        
-        if(utils.insideEnemysArea(allies[i],0,0)):
-            safe = False
+    #safe = True
+    #
+    #
+    #for i in range(len(allies)):
+    #    if (i == index):
+    #        continue
+    #    if(utils.insideOurArea(allies[i],0,0)):
+    #        safe = False
+    #    
+    #    if(utils.insideEnemysArea(allies[i],0,0)):
+    #        safe = False
+    #    
+    #
+    #if ( not safe and (utils.insideOurArea(curPos,0,0) or utils.insideEnemysArea(curPos,0,0))):
+    #    if(curPos[1]  < Field.goalMin[1]):
+    #        if(robotPos[1] < Field.goalAreaMin[1]):
+    #            curPos = (utils.bound(curPos[0], Field.offsetX+Field.goalAreaWidth+(utils.halfAxis*2.75), Field.goalAreaMin[0]-(utils.halfAxis*2.75)),curPos[1])
+    #        else:
+    #            curPos = (curPos[0],utils.bound(curPos[1],0,Field.goalAreaMin[1] - (utils.halfAxis*2.75)))
+    #        
+    #    elif(curPos[1] > Field.goalMax[1]):
+    #        if(robotPos[1] > Field.goalAreaMax[1]):
+    #            curPos = (utils.bound(curPos[0], Field.offsetX+Field.goalAreaWidth+(utils.halfAxis*2.75), Field.goalAreaMin[0]-(utils.halfAxis*2.75)),curPos[1])
+    #        else:
+    #            curPos = (curPos[0],utils.bound(curPos[1],Field.goalAreaMax[1] + (utils.halfAxis*2.75),Field.size[1]))
+    #        
+    #    else:
+    #        curPos = (utils.bound(curPos[0], Field.offsetX+Field.goalAreaWidth+(utils.halfAxis*2.75), Field.goalAreaMin[0]-(utils.halfAxis*2.75)),curPos[1])
         
     
-    if ( not safe and (utils.insideOurArea(curPos,0,0) or utils.insideEnemysArea(curPos,0,0))):
-        if(curPos[1]  < Field.goalMin[1]):
-            if(robotPos[1] < Field.goalAreaMin[1]):
-                curPos = (utils.bound(curPos[0], Field.offsetX+Field.goalAreaWidth+(utils.halfAxis*2.75), Field.goalAreaMin[0]-(utils.halfAxis*2.75)),curPos[1])
-            else:
-                curPos = (curPos[0],utils.bound(curPos[1],0,Field.goalAreaMin[1] - (utils.halfAxis*2.75)))
-            
-        elif(curPos[1] > Field.goalMax[1]):
-            if(robotPos[1] > Field.goalAreaMax[1]):
-                curPos = (utils.bound(curPos[0], Field.offsetX+Field.goalAreaWidth+(utils.halfAxis*2.75), Field.goalAreaMin[0]-(utils.halfAxis*2.75)),curPos[1])
-            else:
-                curPos = (curPos[0],utils.bound(curPos[1],Field.goalAreaMax[1] + (utils.halfAxis*2.75),Field.size[1]))
-            
-        else:
-            curPos = (utils.bound(curPos[0], Field.offsetX+Field.goalAreaWidth+(utils.halfAxis*2.75), Field.goalAreaMin[0]-(utils.halfAxis*2.75)),curPos[1])
-        
     
-    
-
-
-    curPos = (curPos[0],utils.bound(curPos[1], Field.m_min[1] + 11, Field.m_max[1] - 11)) 
+    for i in range (len(path)):
+        path[i] = (path[i][0],utils.bound(path[i][1], Field.m_min[1] + 11, Field.m_max[1] - 11)) 
   
-
-    return curPos
+    
+    return path
 
   
