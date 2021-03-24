@@ -32,7 +32,7 @@ class shootGoalieState():
     self.RIGHT_GOAL_X = -field_params['field_length']/2
     self.RIGHT_GOAL_Y = field_params['goal_width']/2
 
-    self.ROBOT_RADIUS = 90
+    self.ROBOT_RADIUS = 0.09
 
 
   def getDistance(self, frame) -> float:
