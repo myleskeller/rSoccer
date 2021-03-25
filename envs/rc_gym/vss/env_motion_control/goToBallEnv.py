@@ -9,6 +9,7 @@ import random
 from rc_gym.vss.vss_gym_base import VSSBaseEnv
 from rc_gym.Entities import Robot, Ball, Frame
 from rc_gym.vss.env_motion_control.goToBallState import goToBallState
+import rc_gym.vss.env_motion_control.Utils as Utils
 #from rc_gym.Utils import *
 
 class goToBallEnv(VSSBaseEnv):
@@ -24,10 +25,12 @@ class goToBallEnv(VSSBaseEnv):
       Num     Observation                                       Min                     Max
       0       Ball X   (m)                                   -7000                   7000
       1       Ball Y   (m)                                   -6000                   6000
-      2       Blue id 0 Vx  (m/s)                            -10000                  10000
-      3       Blue id 0 Vy  (m/s)                            -10000                  10000
-      4       Blue id 0 Robot Vw       (rad/s)                -math.pi * 3            math.pi * 3
-      5       Dist Blue id0 - ball (m)                       -10000                  10000
+      2       Ball X   (m)                                   -7000                   7000
+      3       Ball Y   (m)                                   -6000                   6000
+      4       Blue id 0 Vx  (m/s)                            -10000                  10000
+      5       Blue id 0 Vy  (m/s)                            -10000                  10000
+      6       Blue id 0 Robot Vw       (rad/s)                -math.pi * 3            math.pi * 3
+      7       Dist Blue id0 - ball (m)                       -10000                  10000
       
       
 
@@ -56,7 +59,7 @@ class goToBallEnv(VSSBaseEnv):
 
 
     # Observation Space thresholds
-    obsSpaceThresholds = np.array([0.75, 0.65, 2, 2, math.pi * 3, 10], dtype=np.float32)
+    obsSpaceThresholds = np.array([0.75, 0.65, 0.75, 0.65, 2, 2, math.pi * 3, 10], dtype=np.float32)
     self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)
     self.goToballState = None
     self.distAnt = 1000
@@ -81,7 +84,7 @@ class goToBallEnv(VSSBaseEnv):
 
     self.goToBallState = goToBallState()
 
-    observation = self.goToBallState.getObservation(self.frame)
+    observation = self.goToBallState.getObservation(self.frame, self.path)
 
     return np.array(observation)
 
@@ -92,6 +95,9 @@ class goToBallEnv(VSSBaseEnv):
     #ball = Ball(x=random.uniform(-4, 0), y=random.uniform(-4, 4), v_x=0, v_y=0)
     posFrame.ball.x =random.uniform(-0.5,0) 
     posFrame.ball.y=random.uniform(-0.4, 0.4)
+    
+
+
     #ball = Ball(x=0.75, y=0)
     
     # Goalkeeper penalty position
@@ -101,6 +107,9 @@ class goToBallEnv(VSSBaseEnv):
     # Kicker penalty position
     #attacker = Robot(id=0, x=random.uniform(-3.5, 0), y=random.uniform(-4, 4), theta=180, yellow = False)
     posFrame.robots_blue[0] = Robot(id=0, x=random.uniform(-0.7,0), y=random.uniform(-0.2,0.2), theta=180, yellow = False)
+    posFrame.robots_yellow[0] = Robot(id=0, x=-1.0, y=0, theta=180, yellow = True)
+    self.goToBallState = goToBallState()
+    self.path = self.goToBallState.generatePath(posFrame)
 
     return posFrame
     
@@ -110,6 +119,10 @@ class goToBallEnv(VSSBaseEnv):
     rewardDistance = 0
     rewardAngle =0
     done = False
+
+    if(self.goToBallState.distance<0.1):
+      rewardContact += 100
+      self.path.pop(0)
     #print(self.state.timestamp)
 
     
@@ -134,18 +147,15 @@ class goToBallEnv(VSSBaseEnv):
     elif  self.steps > 250:
       #finished the episode
       done = True
-      if (self.goToBallState.distance <= 0.10):
-        #print("OI")
-        rewardContact += 100
       #rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2
     else:
       # the ball in the field limits
-      if (self.goToBallState.distance <= 0.10 ):
+      if (len(self.path)==0):
         #print("OI")
-        rewardContact += 100
+        rewardContact += 500
         done = True
       #rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2 
 
-    reward = rewardContact + rewardDistance + rewardAngle
-    #print(reward)
+    reward = rewardContact + rewardDistance
+    print(self.path[len(self.path)-1])
     return reward, done
