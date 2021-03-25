@@ -27,9 +27,9 @@ class goToBallState:
   angle_relative: float = None
   
 
-  def getDistance(self, frame) -> float:
+  def getDistance(self, frame, target_pos) -> float:
     #print(float(mod(abs(frame.robots_blue[0].x-frame.ball.x), abs(frame.robots_blue[0].y-frame.ball.y))))
-    return float(mod(abs(frame.robots_blue[0].x-frame.ball.x), abs(frame.robots_blue[0].y-frame.ball.y)))
+    return float(mod(abs(frame.robots_blue[0].x-target_pos[0]), abs(frame.robots_blue[0].y-target_pos[1])))
 
   def getTopPosition(self, frame):
     diff_y = TOP_FIELD - frame.robots_blue[0].y
@@ -59,7 +59,7 @@ class goToBallState:
     #print(pos_x, pos_y)
     return pos_x, pos_y  
 
-  def getRelativeRobotToBallAngle(self, frame):
+  def getRelativeRobotToBallAngle(self, frame, target_pos):
     #dist_left = [abs(frame.ball.x - frame.robots_blue[0].x), abs(frame.ball.y - frame.robots_blue[0].y)]
     #angle_ball = angle(dist_left[0], dist_left[1])
     # print(angle_ball)
@@ -83,7 +83,7 @@ class goToBallState:
     #
     #print(angle_relative)
     #
-    robot_ball = [frame.robots_blue[0].x - frame.ball.x, frame.robots_blue[0].y - frame.ball.y]
+    robot_ball = [frame.robots_blue[0].x - target_pos[0], frame.robots_blue[0].y - target_pos[1]]
     angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - frame.robots_blue[0].theta))
     #print(angle_to_ball)
     return angle_to_ball
@@ -108,7 +108,8 @@ class goToBallState:
 
     
   
-  def getObservation(self, frame):
+  def getObservation(self, frame, target_pos):
+   
     self.ball_x, self.ball_y = self.getBallLocalCoordinates(frame)
     #self.ball_x, self.ball_y = target[0], target[1]
     #print(self.ball_x, self.ball_y)
@@ -117,23 +118,30 @@ class goToBallState:
     self.robot_vx = frame.robots_blue[0].v_x
     self.robot_vy = frame.robots_blue[0].v_y
     
-    self.distance = self.getDistance(frame)
+    self.distance = self.getDistance(frame, target_pos[0])
     self.robot_w = frame.robots_blue[0].v_theta
     self.wall_top_x, self.wall_top_y = self.getTopPosition(frame)
     self.wall_bottom_x, self.wall_bottom_y = self.getBottomPosition(frame)   
     self.wall_left_x, self.wall_left_y = self.getLeftPosition(frame)
     self.wall_right_x, self.wall_right_y = self.getRightPosition(frame)
-    self.angle_relative = self.getRelativeRobotToBallAngle(frame)
+    self.angle_relative = self.getRelativeRobotToBallAngle(frame, target_pos[0])
     #print(self.angle_relative)
 
     
     
     observation = []
-    objective_pos = self.run_planning(frame,0,True)
+    #objective_pos = self.run_planning(frame,0,True)
     #observation.append(self.ball_x) 
     #observation.append(self.ball_y)
-    observation.append(objective_pos[0]) 
-    observation.append(objective_pos[1])  
+    observation.append(target_pos[0][0]) 
+    observation.append(target_pos[0][1])
+    if(len(target_pos)>1):
+      observation.append(target_pos[1][0]) 
+      observation.append(target_pos[1][1])
+    else:
+      observation.append(target_pos[0][0]) 
+      observation.append(target_pos[0][1])
+      
     observation.append(self.robot_vx) 
     observation.append(self.robot_vy) 
     observation.append(self.robot_w)
@@ -149,11 +157,19 @@ class goToBallState:
     
     return observation
 
+  def generatePath(self, frame):
+    objective_pos = self.run_planning(frame,0,True)
+    for i in range(len(objective_pos)):
+      objective_pos[i] = self.getBallLocalCoordinates(frame)
+    return objective_pos
+
+
   def run_planning(self, frame, index, yellow):
     width = 1.3/2.0
     lenght = (1.5/2.0) + 0.1
 
     ball = frame.ball
+    #print(frame)
     robot = frame.robots_yellow[index] if yellow else frame.robots_blue[index]
 
     if yellow:
@@ -176,6 +192,7 @@ class goToBallState:
             angle_rob -= 2*math.pi
         elif angle_rob < -math.pi:
             angle_rob += 2*math.pi
+
         robot_pos = ((lenght - robot.x) * 100,(width - robot.y) * 100)
         ball_pos = ((lenght -ball.x) * 100, (width - ball.y) * 100)
         ball_speed = (-ball.v_x * 100, -ball.v_y * 100)
@@ -191,14 +208,24 @@ class goToBallState:
 
     #print(angle_rob)
     path = univector.update(robot_pos,ball_pos,ball_pos,math.pi,allies,enemies,index)
-    print(path)
-    return path[0]
+    #print(path)
+    for i in range (len(path)):
+      if yellow:
+        path[i] = (path[i][0]/100 - lenght, path[i][1]/100 - width) 
+      else:
+        path[i] = (lenght - path[i][0]/100, width - path[i][1]/100)
+    #print("NEW", path)
+        
+
+
+    return path
     '''obj_pos = None
     
     obj_pos = beh.decideAction(ball_pos, ball_speed, robot_pos)
   
 
-    #print(obj_pos)
+    #
+    # (obj_pos)
     ret = None
     if(obj_pos == None):
         speeds = utils.spin(robot_pos, ball_pos, ball_speed)

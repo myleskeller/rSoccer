@@ -36,16 +36,16 @@ def moveToGoalField(source, target, thetaDir, position):
 
         return theta_down - math.pi / 2. * (2 - (m_de + m_kR) / (rho_down + m_kR))
     else:
-        if(utils.smallestAngleDiff(math.atan2(position[1]-gy,position[0]-gx),thetaDir) > math.pi_2):
+        if(utils.smallestAngleDiff(math.atan2(position[1]-gy,position[0]-gx),thetaDir) > math.pi/2.0):
             return thetaDir
         else:
             phi_pr = theta_up + math.pi / 2. * (2 - (m_de + m_kR) / (rho_up + m_kR))
             phi_pl = theta_down - math.pi / 2. * (2 - (m_de + m_kR) / (rho_down + m_kR))
             yl = ph_y + m_de + g_size
             yr = ph_y - m_de - g_size
-            nH_pl(math.fabs(yr)*math.cos(phi_pl) / (2 * m_de), math.fabs(yr)*math.sin(phi_pl) / (2 * m_de))
-            nH_pr(math.fabs(yl)*math.cos(phi_pr) / (2 * m_de), math.fabs(yl)*math.sin(phi_pr) / (2 * m_de))
-            finalVector(nH_pl[0] + nH_pr[0], nH_pl[1] + nH_pr[1])
+            nH_pl = (math.fabs(yr)*math.cos(phi_pl) / (2 * m_de), math.fabs(yr)*math.sin(phi_pl) / (2 * m_de))
+            nH_pr = (math.fabs(yl)*math.cos(phi_pr) / (2 * m_de), math.fabs(yl)*math.sin(phi_pr) / (2 * m_de))
+            finalVector = (nH_pl[0] + nH_pr[0], nH_pl[1] + nH_pr[1])
             return math.atan2(finalVector[1], finalVector[0])
     
   
@@ -115,8 +115,8 @@ def update(robotPos, ballPos, objectivePos, objectiveAngle, allies, enemies, ind
     if(ballPos[1] > 105 or ballPos[1] < 25):
         canProject = False
     
-    print("ROBOT    ", robotPos)
-    print("OBJECTIVE ", objectivePos)
+    #print("ROBOT    ", robotPos)
+    #print("OBJECTIVE ", objectivePos)
     i=0
     path =[]
     while (utils.euclideanDistance(curPos, objectivePos)>10.0):
