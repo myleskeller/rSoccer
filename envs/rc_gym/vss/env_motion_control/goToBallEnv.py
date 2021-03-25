@@ -107,7 +107,11 @@ class goToBallEnv(VSSBaseEnv):
     # Kicker penalty position
     #attacker = Robot(id=0, x=random.uniform(-3.5, 0), y=random.uniform(-4, 4), theta=180, yellow = False)
     posFrame.robots_blue[0] = Robot(id=0, x=random.uniform(-0.7,0), y=random.uniform(-0.2,0.2), theta=180, yellow = False)
-    posFrame.robots_yellow[0] = Robot(id=0, x=-1.0, y=0, theta=180, yellow = True)
+    posFrame.robots_blue[1] = Robot(x=-1.0, y=0, theta=0, yellow = False)
+    posFrame.robots_blue[2] = Robot(x=-1.0, y=1.0, theta=0, yellow = False)
+    posFrame.robots_yellow[0] = Robot(x=1.0, y=-1.0, theta=math.pi, yellow = True)
+    posFrame.robots_yellow[1] = Robot(x=1.0, y=0, theta=math.pi, yellow = True)
+    posFrame.robots_yellow[2] = Robot(x=1.0, y=1.0, theta=math.pi, yellow = True)
     self.goToBallState = goToBallState()
     self.path = self.goToBallState.generatePath(posFrame)
 
@@ -157,5 +161,5 @@ class goToBallEnv(VSSBaseEnv):
       #rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2 
 
     reward = rewardContact + rewardDistance
-    print(self.path[len(self.path)-1])
+    #print(self.path[len(self.path)-1])
     return reward, done
