@@ -122,11 +122,11 @@ def load_actor_model(net, checkpoint):
 def play(params, net, device, exp_queue, agent_env, test, writer, collected_samples, finish_event):
 
     try:
-        agentAtk = ddpg_model.AgentDDPG(net, device=device[0],
+        agentAtk = ddpg_model.AgentDDPG(net[0], device=device[0],
                                      ou_teta=params['ou_teta'],
                                      ou_sigma=params['ou_sigma'])
         
-        agentGk = ddpg_model.AgentDDPG(net, device=device[1],
+        agentGk = ddpg_model.AgentDDPG(net[1], device=device[1],
                                      ou_teta=params['ou_teta'],
                                      ou_sigma=params['ou_sigma'])
 
@@ -157,39 +157,40 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
                                                       reward[1], next_state)
             state = next_state
             if not test and not evaluation:
-                exp_queue.put(exp)
+                exp_queue.put({'exp_atk': exp_atk, 'exp_gk': exp_gk})
             elif test:
                 agent_env.render("human")
 
             if done:
-                # CHANGE REWARD print reward  :
                 fps = steps/(time.time() - then)
                 then = time.time()
 
-                writer.add_scalar("rw/total", epi_reward, matches_played)
+                writer.add_scalar("rw/total_atk", epi_reward_atk, matches_played)
+                writer.add_scalar("rw/total_gk", epi_reward_gk, matches_played)
                 writer.add_scalar("rw/steps_ep", steps, matches_played)
                 writer.add_scalar("rw/goal_score",
                                   info['goal_score'],
                                   matches_played)
-                writer.add_scalar("rw/move", info['move'], matches_played)
-                writer.add_scalar("rw/move_y", info['move_y'], matches_played)
+                writer.add_scalar("rw/move_atk", info['move_atk'], matches_played)
+                # writer.add_scalar("rw/move_gk", info['move_gk'], matches_played)
+                writer.add_scalar("rw/move_y_gk", info['move_y_gk'], matches_played)
                 writer.add_scalar(
-                    "rw/ball_grad", info['ball_grad'], matches_played)
-                # writer.add_scalar("rw/energy", info['energy'], matches_played)
+                    "rw/ball_grad_atk", info['ball_grad_atk'], matches_played)
+                writer.add_scalar("rw/energy_atk", info['energy_atk'], matches_played)
                 writer.add_scalar("rw/goals_blue",
                                   info['goals_blue'],
                                   matches_played)
                 writer.add_scalar("rw/goals_yellow",
                                   info['goals_yellow'],
                                   matches_played)
-                writer.add_scalar("rw/defense",
-                                  info['defense'],
+                writer.add_scalar("rw/defense_gk",
+                                  info['defense_gk'],
                                   matches_played)
-                writer.add_scalar("rw/distance_own_goal_bar",
-                                  info['distance_own_goal_bar'],
+                writer.add_scalar("rw/distance_own_goal_bar_gk",
+                                  info['distance_own_goal_bar_gk'],
                                   matches_played)
-                writer.add_scalar("rw/ball_leave_area",
-                                  info['ball_leave_area'],
+                writer.add_scalar("rw/ball_leave_area_gk",
+                                  info['ball_leave_area_gk'],
                                   matches_played)
                 
 
@@ -197,14 +198,17 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
                 print(f'-------Reward:', epi_reward)
                 print(f'-------FPS:', fps)
                 print(f'<==================================>\n')
-                epi_reward = 0
+                epi_reward_atk = 0
+                epi_reward_gk = 0
                 steps = 0
                 matches_played += 1
                 state = agent_env.reset()
-                agent.ou_noise.reset()
+                agentAtk.ou_noise.reset()
+                agentGk.ou_noise.reset()
 
                 if not test and evaluation:  # evaluation just finished
-                    writer.add_scalar("eval/rw", epi_reward, matches_played)
+                    writer.add_scalar("eval/rw_atk", epi_reward_atk, matches_played)
+                    writer.add_scalar("eval/rw_gk", epi_reward_gk, matches_played)
                     print("evaluation finished")
 
                 evaluation = matches_played % eval_freq_matches == 0
@@ -235,8 +239,9 @@ def train(model_params, act_net, device,
           exp_queue, finish_event, checkpoint=None):
 
     try:
-        run_name = model_params['run_name']
         data_path = model_params['data_path']
+        run_name_atk = model_params['run_name']['run_name_atk']
+        run_name_gk = model_params['run_name']['run_name_gk']
 
         exp_buffer = common.PersistentExperienceReplayBuffer(experience_source=None,
                                                              buffer_size=model_params['replay_size']) if \
@@ -248,23 +253,37 @@ def train(model_params, act_net, device,
         exp_buffer.set_state_action_format(
             state_format=model_params['state_format'], action_format=model_params['action_format'])
 
-        crt_net = ddpg_model.DDPG_MODELS_CRITIC[model_params['crt_type']](model_params['state_shape'].shape[0],
-                                                                          model_params['action_shape'].shape[0]).to(device)
-        optimizer_act = torch.optim.Adam(
-            act_net.parameters(), lr=model_params['learning_rate'])
-        optimizer_crt = torch.optim.Adam(
-            crt_net.parameters(), lr=model_params['learning_rate'])
-        tgt_act_net = ptan.agent.TargetNet(act_net)
-        tgt_crt_net = ptan.agent.TargetNet(crt_net)
+        crt_net_atk = ddpg_model.DDPG_MODELS_CRITIC[model_params['crt_type']](model_params['state_shape'].shape[0],
+                                                                          model_params['action_shape'].shape[0]).to(device[0])
+        optimizer_act_atk = torch.optim.Adam(
+            act_net[0].parameters(), lr=model_params['learning_rate'])
+        optimizer_crt_atk = torch.optim.Adam(
+            crt_net_atk.parameters(), lr=model_params['learning_rate'])
+        tgt_act_net_atk = ptan.agent.TargetNet(act_net[0])
+        tgt_crt_net_atk = ptan.agent.TargetNet(crt_net_atk)
+        
+        crt_net_gk = ddpg_model.DDPG_MODELS_CRITIC[model_params['crt_type']](model_params['state_shape'].shape[0],
+                                                                          model_params['action_shape'].shape[0]).to(device[1])
+        optimizer_act_gk = torch.optim.Adam(
+            act_net[1].parameters(), lr=model_params['learning_rate'])
+        optimizer_crt_gk = torch.optim.Adam(
+            crt_net_gk.parameters(), lr=model_params['learning_rate'])
+        tgt_act_net_gk = ptan.agent.TargetNet(act_net[1])
+        tgt_crt_net_gk = ptan.agent.TargetNet(crt_net_gk)
 
-        act_net.train(True)
-        crt_net.train(True)
-        tgt_act_net.target_model.train(True)
-        tgt_crt_net.target_model.train(True)
+        act_net[0].train(True)
+        crt_net_atk.train(True)
+        tgt_act_net_atk.target_model.train(True)
+        tgt_crt_net_atk.target_model.train(True)
+
+        act_net[1].train(True)
+        crt_net_gk.train(True)
+        tgt_act_net_gk.target_model.train(True)
+        tgt_crt_net_gk.target_model.train(True)
 
         collected_samples = 0
         processed_samples = 0
-        best_reward = -np.inf
+        best_reward = (-np.inf, -np.inf)
 
         if checkpoint is not None:
             if 'state_dict_crt' in checkpoint:
@@ -275,30 +294,57 @@ def train(model_params, act_net, device,
                     processed_samples = checkpoint['processed_samples']
 
                 reward_avg = best_reward = checkpoint['reward']
-                crt_net.load_state_dict(checkpoint['state_dict_crt'])
-                tgt_act_net.target_model.load_state_dict(
-                    checkpoint['tgt_act_state_dict'])
-                tgt_crt_net.target_model.load_state_dict(
-                    checkpoint['tgt_crt_state_dict'])
-                optimizer_act.load_state_dict(checkpoint['optimizer_act'])
-                optimizer_crt.load_state_dict(checkpoint['optimizer_crt'])
-                print("=> loaded checkpoint '%s' (collected samples: %d, processed_samples: %d, with reward %f)" % (
-                    run_name, collected_samples, processed_samples, reward_avg))
+                crt_net_atk.load_state_dict(checkpoint['state_dict_crt']['state_dict_crt_atk'])
+                crt_net_gk.load_state_dict(checkpoint['state_dict_crt']['state_dict_crt_gk'])
+
+                tgt_act_net_atk.target_model.load_state_dict(
+                    checkpoint['tgt_act_state_dict']['tgt_act_state_dict_atk'])
+                tgt_act_net_gk.target_model.load_state_dict(
+                    checkpoint['tgt_act_state_dict']['tgt_act_state_dict_gk'])
+                    
+                tgt_crt_net_atk.target_model.load_state_dict(
+                    checkpoint['tgt_crt_state_dict']['tgt_crt_state_dict_atk'])
+                tgt_crt_net_gk.target_model.load_state_dict(
+                    checkpoint['tgt_crt_state_dict']['tgt_crt_state_dict_gk'])
+
+                optimizer_act_atk.load_state_dict(checkpoint['optimizer_act']['optimizer_act_atk'])
+                optimizer_crt_atk.load_state_dict(checkpoint['optimizer_crt']['optimizer_crt_atk'])
+                optimizer_act_gk.load_state_dict(checkpoint['optimizer_act']['optimizer_act_gk'])
+                optimizer_crt_gk.load_state_dict(checkpoint['optimizer_crt']['optimizer_crt_gk'])
+                print("=> loaded checkpoint '%s' (collected samples: %d, processed_samples: %d, with reward (attacker: %f, goalkeeper: %f))" % (
+                    run_name, collected_samples, processed_samples, reward_avg[0], reward_avg[1]))
 
             if 'exp' in checkpoint:  # load experience buffer
                 exp = checkpoint['exp']
-                load = True
+                exp_atk = exp_gk = None
+                load_atk = True
+                load_gk = True
                 if exp is None:
-                    print("Looking for default exb file")
-                    exp = data_path + "/buffer/" + run_name + ".exb"
-                    load = os.path.isfile(exp)
-                    if not load:
-                        print('File not found:"%s" (nothing to resume)' % exp)
+                    print("Looking for default exb file for the attacker")
+                    exp_atk = data_path + "/buffer/" + run_name_atk + ".exb"
+                    load_atk = os.path.isfile(exp_atk)
+                    if not load_atk:
+                        print('File not found:"%s" (nothing to resume)' % exp_atk)
+                    
+                    print("Looking for default exb file for the goalkeeper")
+                    exp_gk = data_path + "/buffer/" + run_name_gk + ".exb"
+                    load_gk = os.path.isfile(exp_gk)
+                    if not load_gk:
+                        print('File not found:"%s" (nothing to resume)' % exp_gk)
+                else:
+                    exp_atk = exp['exp_atk']
+                    exp_gk = exp['exp_gk']
 
-                if load:
-                    print("=> Loading experiences from: " + exp + "...")
-                    exp_buffer.load_exps_from_file(exp)
-                    print("%d experiences loaded" % (len(exp_buffer)))
+                if load_atk:
+                    print("=> Loading attacker experiences from: " + exp_atk + "...")
+                    exp_buffer_atk.load_exps_from_file(exp_atk)
+                    print("%d experiences loaded" % (len(exp_buffer_atk)))
+
+                if load_gk:
+                    print("=> Loading experiences from: " + exp_gk + "...")
+                    exp_buffer_gk.load_exps_from_file(exp_gk)
+                    print("%d experiences loaded" % (len(exp_buffer_gk)))
+
 
         target_net_sync = model_params['target_net_sync']
         replay_initial = model_params['replay_initial']
@@ -307,8 +353,10 @@ def train(model_params, act_net, device,
         next_net_sync = processed_samples + model_params['target_net_sync']
         queue_max_size = batch_size = model_params['batch_size']
         writer_path = model_params['writer_path']
-        writer = SummaryWriter(log_dir=writer_path+"/train")
-        tracker = common.RewardTracker(writer)
+        writer_atk = SummaryWriter(log_dir=writer_path+"/attacker/train")
+        writer_gk = SummaryWriter(log_dir=writer_path+"/goalkeeper/train")
+        tracker_atk = common.RewardTracker(writer_atk)
+        tracker_gk = common.RewardTracker(writer_gk)
 
         actor_loss = 0.0
         critic_loss = 0.0
@@ -320,16 +368,17 @@ def train(model_params, act_net, device,
             new_samples = 0
 
             # print("get qsize: %d" % size)
-            rewards_gg = [0 for _ in range(0, max(1, int(queue_max_size)))]
+            rewards_gg = [(0, 0) for _ in range(0, max(1, int(queue_max_size)))]
             for i in range(0, max(1, int(queue_max_size))):
                 exp = exp_queue.get()
                 if exp is None:
                     break
-                exp_buffer._add(exp)
-                rewards_gg[i] = exp.reward
+                exp_buffer_atk._add(exp['exp_atk'])
+                exp_buffer_gk._add(exp['exp_gk'])
+                rewards_gg[i] = (exp['exp_atk'].reward, exp['exp_gk'].reward)
                 new_samples += 1
 
-            if len(exp_buffer) < replay_initial:
+            if len(exp_buffer_atk) < replay_initial or len(exp_buffer_gk) < replay_initial:
                 continue
 
             collected_samples += new_samples
