@@ -243,47 +243,59 @@ def train(model_params, act_net, device,
         run_name_atk = model_params['run_name']['run_name_atk']
         run_name_gk = model_params['run_name']['run_name_gk']
 
-        exp_buffer = common.PersistentExperienceReplayBuffer(experience_source=None,
+        exp_buffer_atk = common.PersistentExperienceReplayBuffer(experience_source=None,
                                                              buffer_size=model_params['replay_size']) if \
             not model_params['per'] else common.PersistentExperiencePrioritizedReplayBuffer(experience_source=None,
                                                                                             buffer_size=model_params[
                                                                                                 'replay_size'],
                                                                                             alpha=model_params['per_alpha'],
                                                                                             beta=model_params['per_beta'])
-        exp_buffer.set_state_action_format(
+        exp_buffer_atk.set_state_action_format(
+            state_format=model_params['state_format'], action_format=model_params['action_format'])
+
+        exp_buffer_gk = common.PersistentExperienceReplayBuffer(experience_source=None,
+                                                             buffer_size=model_params['replay_size']) if \
+            not model_params['per'] else common.PersistentExperiencePrioritizedReplayBuffer(experience_source=None,
+                                                                                            buffer_size=model_params[
+                                                                                                'replay_size'],
+                                                                                            alpha=model_params['per_alpha'],
+                                                                                            beta=model_params['per_beta'])
+        exp_buffer_gk.set_state_action_format(
             state_format=model_params['state_format'], action_format=model_params['action_format'])
 
         crt_net_atk = ddpg_model.DDPG_MODELS_CRITIC[model_params['crt_type']](model_params['state_shape'].shape[0],
-                                                                          model_params['action_shape'].shape[0]).to(device[0])
+                                                                          model_params['action_shape'].shape[0]).to(device['device_atk'])
         optimizer_act_atk = torch.optim.Adam(
-            act_net[0].parameters(), lr=model_params['learning_rate'])
+            act_net['act_net_atk'].parameters(), lr=model_params['learning_rate'])
         optimizer_crt_atk = torch.optim.Adam(
             crt_net_atk.parameters(), lr=model_params['learning_rate'])
-        tgt_act_net_atk = ptan.agent.TargetNet(act_net[0])
+        tgt_act_net_atk = ptan.agent.TargetNet(act_net['act_net_atk'])
         tgt_crt_net_atk = ptan.agent.TargetNet(crt_net_atk)
         
         crt_net_gk = ddpg_model.DDPG_MODELS_CRITIC[model_params['crt_type']](model_params['state_shape'].shape[0],
-                                                                          model_params['action_shape'].shape[0]).to(device[1])
+                                                                          model_params['action_shape'].shape[0]).to(device['device_gk'])
         optimizer_act_gk = torch.optim.Adam(
-            act_net[1].parameters(), lr=model_params['learning_rate'])
+            act_net['act_net_gk'].parameters(), lr=model_params['learning_rate'])
         optimizer_crt_gk = torch.optim.Adam(
             crt_net_gk.parameters(), lr=model_params['learning_rate'])
-        tgt_act_net_gk = ptan.agent.TargetNet(act_net[1])
+        tgt_act_net_gk = ptan.agent.TargetNet(act_net['act_net_gk'])
         tgt_crt_net_gk = ptan.agent.TargetNet(crt_net_gk)
 
-        act_net[0].train(True)
+        act_net['act_net_atk'].train(True)
         crt_net_atk.train(True)
         tgt_act_net_atk.target_model.train(True)
         tgt_crt_net_atk.target_model.train(True)
 
-        act_net[1].train(True)
+        act_net['act_net_gk'].train(True)
         crt_net_gk.train(True)
         tgt_act_net_gk.target_model.train(True)
         tgt_crt_net_gk.target_model.train(True)
 
         collected_samples = 0
         processed_samples = 0
-        best_reward = (-np.inf, -np.inf)
+        # best_reward = (-np.inf, -np.inf)
+        best_reward_atk = -np.inf
+        best_reward_gk = -np.inf
 
         if checkpoint is not None:
             if 'state_dict_crt' in checkpoint:
@@ -293,7 +305,9 @@ def train(model_params, act_net, device,
                 if 'processed_samples' in checkpoint:
                     processed_samples = checkpoint['processed_samples']
 
-                reward_avg = best_reward = checkpoint['reward']
+                reward_avg = checkpoint['reward']
+                best_reward_atk = reward_avg['reward_atk']
+                best_reward_gk = reward_avg['reward_gk']
                 crt_net_atk.load_state_dict(checkpoint['state_dict_crt']['state_dict_crt_atk'])
                 crt_net_gk.load_state_dict(checkpoint['state_dict_crt']['state_dict_crt_gk'])
 
@@ -312,7 +326,7 @@ def train(model_params, act_net, device,
                 optimizer_act_gk.load_state_dict(checkpoint['optimizer_act']['optimizer_act_gk'])
                 optimizer_crt_gk.load_state_dict(checkpoint['optimizer_crt']['optimizer_crt_gk'])
                 print("=> loaded checkpoint '%s' (collected samples: %d, processed_samples: %d, with reward (attacker: %f, goalkeeper: %f))" % (
-                    run_name, collected_samples, processed_samples, reward_avg[0], reward_avg[1]))
+                    run_name, collected_samples, processed_samples, reward_avg['reward_atk'], reward_avg['reward_gk']))
 
             if 'exp' in checkpoint:  # load experience buffer
                 exp = checkpoint['exp']
@@ -358,9 +372,13 @@ def train(model_params, act_net, device,
         tracker_atk = common.RewardTracker(writer_atk)
         tracker_gk = common.RewardTracker(writer_gk)
 
-        actor_loss = 0.0
-        critic_loss = 0.0
-        last_loss_average = 0.0
+        actor_loss_atk = 0.0
+        critic_loss_atk = 0.0
+        last_loss_average_atk = 0.0
+        
+        actor_loss_gk = 0.0
+        critic_loss_gk = 0.0
+        last_loss_average_gk = 0.0
 
         # training loop:
         print("Training started.")
@@ -368,14 +386,14 @@ def train(model_params, act_net, device,
             new_samples = 0
 
             # print("get qsize: %d" % size)
-            rewards_gg = [(0, 0) for _ in range(0, max(1, int(queue_max_size)))]
+            rewards_gg = [{'reward_atk': 0, 'reward_gk': 0} for _ in range(0, max(1, int(queue_max_size)))]
             for i in range(0, max(1, int(queue_max_size))):
                 exp = exp_queue.get()
                 if exp is None:
                     break
                 exp_buffer_atk._add(exp['exp_atk'])
                 exp_buffer_gk._add(exp['exp_gk'])
-                rewards_gg[i] = (exp['exp_atk'].reward, exp['exp_gk'].reward)
+                rewards_gg[i] = {'reward_atk': exp['exp_atk'].reward, 'reward_gk': exp['exp_gk'].reward}
                 new_samples += 1
 
             if len(exp_buffer_atk) < replay_initial or len(exp_buffer_gk) < replay_initial:
@@ -385,31 +403,52 @@ def train(model_params, act_net, device,
 
             # training loop:
             while exp_queue.qsize() < queue_max_size/2:
-                mem_w = None
+                mem_w_atk = None
+                mem_w_gk = None
                 if not model_params['per']:
-                    batch = exp_buffer.sample(batch_size)
+                    batch_atk = exp_buffer_atk.sample(batch_size)
+                    batch_gk = exp_buffer_gk.sample(batch_size)
                 else:
-                    batch, mem_idxs, mem_w = exp_buffer.sample(batch_size)
-                optimizer_crt.zero_grad()
-                optimizer_act.zero_grad()
+                    batch_atk, mem_idxs_atk, mem_w_atk = exp_buffer_atk.sample(batch_size)
+                    batch_gk, mem_idxs_gk, mem_w_gk = exp_buffer_gk.sample(batch_size)
+                optimizer_crt_atk.zero_grad()
+                optimizer_act_atk.zero_grad()
+                optimizer_crt_gk.zero_grad()
+                optimizer_act_gk.zero_grad()
 
-                crt_loss_v, mem_loss = calc_loss_ddpg_critic(batch, crt_net, tgt_act_net.target_model, tgt_crt_net.target_model, gamma=model_params['gamma'],
-                                                             cuda=(device.type == "cuda"), cuda_async=True, per=model_params['per'], mem_w=mem_w)
-                crt_loss_v.backward()
-                optimizer_crt.step()
+                crt_loss_v_atk, mem_loss_atk = calc_loss_ddpg_critic(batch_atk, crt_net_atk, tgt_act_net_atk.target_model, tgt_crt_net_atk.target_model, gamma=model_params['gamma'],
+                                                             cuda=(device['device_atk'].type == "cuda"), cuda_async=True, per=model_params['per'], mem_w=mem_w_atk)
+                crt_loss_v_atk.backward()
+                optimizer_crt_atk.step()
+
+                crt_loss_v_gk, mem_loss_gk = calc_loss_ddpg_critic(batch_gk, crt_net_gk, tgt_act_net_gk.target_model, tgt_crt_net_gk.target_model, gamma=model_params['gamma'],
+                                                             cuda=(device['device_gk'].type == "cuda"), cuda_async=True, per=model_params['per'], mem_w=mem_w_gk)
+                crt_loss_v_gk.backward()
+                optimizer_crt_gk.step()
+
                 if model_params['per']:
-                    mem_loss = mem_loss.detach().cpu().numpy()[0]
-                    exp_buffer.update_priorities(mem_idxs, mem_loss)
+                    mem_loss_atk = mem_loss_atk.detach().cpu().numpy()[0]
+                    exp_buffer_atk.update_priorities(mem_idxs_atk, mem_loss_atk)
+                    mem_loss_gk = mem_loss_gk.detach().cpu().numpy()[0]
+                    exp_buffer_gk.update_priorities(mem_idxs_gk, mem_loss_gk)
 
-                act_loss_v = calc_loss_ddpg_actor(
-                    batch, act_net, crt_net, cuda=(device.type == "cuda"),
+                act_loss_v_atk = calc_loss_ddpg_actor(
+                    batch_atk, act_net['act_net_atk'], crt_net_atk, cuda=(device['device_atk'].type == "cuda"),
                     cuda_async=True)
-                act_loss_v.backward()
-                optimizer_act.step()
+                act_loss_v_atk.backward()
+                optimizer_act_atk.step()
+
+                act_loss_v_gk = calc_loss_ddpg_actor(
+                    batch_gk, act_net['act_net_gk'], crt_net_gk, cuda=(device['device_gk'].type == "cuda"),
+                    cuda_async=True)
+                act_loss_v_gk.backward()
+                optimizer_act_gk.step()
 
                 processed_samples += batch_size
-                critic_loss += crt_loss_v.item()
-                actor_loss += act_loss_v.item()
+                critic_loss_atk += crt_loss_v_atk.item()
+                actor_loss_atk += act_loss_v_atk.item()
+                critic_loss_gk += crt_loss_v_gk.item()
+                actor_loss_gk += act_loss_v_gk.item()
 
             # print("|\n")
 
@@ -418,57 +457,104 @@ def train(model_params, act_net, device,
             if target_net_sync >= 1:
                 if processed_samples >= next_net_sync:
                     next_net_sync = processed_samples + target_net_sync
-                    tgt_act_net.sync()
-                    tgt_crt_net.sync()
+                    tgt_act_net_atk.sync()
+                    tgt_crt_net_atk.sync()
+                    tgt_act_net_gk.sync()
+                    tgt_crt_net_gk.sync()
             else:
-                tgt_act_net.alpha_sync(alpha=target_net_sync)  # 1 - 1e-3
-                tgt_crt_net.alpha_sync(alpha=target_net_sync)
+                tgt_act_net_atk.alpha_sync(alpha=target_net_sync)  # 1 - 1e-3
+                tgt_crt_net_atk.alpha_sync(alpha=target_net_sync)
+                tgt_act_net_gk.alpha_sync(alpha=target_net_sync)  # 1 - 1e-3
+                tgt_crt_net_gk.alpha_sync(alpha=target_net_sync)
 
             if processed_samples >= next_check_point:
                 next_check_point = processed_samples + \
                     model_params['save_model_frequency']
-                reward_avg = avg_rewards(exp_buffer, 1000)
+                reward_avg = {'reward_atk': avg_rewards(exp_buffer_atk, 1000), 'reward_gk': avg_rewards(exp_buffer_gk, 1000)}
 
-                if reward_avg > best_reward:
-                    best_reward = reward_avg
-                    is_best = True
+                if reward_avg['reward_atk'] > best_reward_atk:
+                    best_reward_atk = reward_avg['reward_atk']
+                    is_best_atk = True
                 else:
-                    is_best = False
+                    is_best_atk = False
+
+                if reward_avg['reward_gk'] > best_reward_gk:
+                    best_reward_gk = reward_avg['reward_gk']
+                    is_best_gk = True
+                else:
+                    is_best_gk = False
 
                 try:
-                    print("saving checkpoint with %d/%d collected/processed samples with best reward %f..." %
-                          (collected_samples, processed_samples, best_reward))
+                    print("saving attacker checkpoint with %d/%d collected/processed samples with best reward %f..." %
+                          (collected_samples, processed_samples, best_reward_atk))
                     save_checkpoint({
                         'model_type': 'ddpg',
                         'collected_samples': collected_samples,
                         'processed_samples': processed_samples,
-                        'state_dict_act': act_net.state_dict(),
-                        'state_dict_crt': crt_net.state_dict(),
-                        'tgt_act_state_dict': tgt_act_net.target_model.state_dict(),
-                        'tgt_crt_state_dict': tgt_crt_net.target_model.state_dict(),
-                        'reward': reward_avg,
-                        'optimizer_act': optimizer_act.state_dict(),
-                        'optimizer_crt': optimizer_crt.state_dict(),
-                    }, is_best, "model/" + run_name + ".pth")
+                        'state_dict_act': act_net['act_net_atk'].state_dict(),
+                        'state_dict_crt': crt_net_atk.state_dict(),
+                        'tgt_act_state_dict': tgt_act_net_atk.target_model.state_dict(),
+                        'tgt_crt_state_dict': tgt_crt_net_atk.target_model.state_dict(),
+                        'reward': reward_avg['reward_atk'],
+                        'optimizer_act': optimizer_act_atk.state_dict(),
+                        'optimizer_crt': optimizer_crt_atk.state_dict(),
+                    }, is_best_atk, "model/" + run_name_atk + ".pth")
 
-                    if processed_samples > last_loss_average:
-                        actor_loss = batch_size*actor_loss / \
-                            (processed_samples-last_loss_average)
-                        critic_loss = batch_size*critic_loss / \
-                            (processed_samples-last_loss_average)
-                        print("avg_reward:%.4f, avg_loss:%f" %
-                              (reward_avg, actor_loss))
-                        tracker.track_training(
-                            processed_samples, reward_avg, actor_loss, critic_loss)
-                        actor_loss = 0.0
-                        critic_loss = 0.0
-                        last_loss_average = processed_samples
+                    if processed_samples > last_loss_average_atk:
+                        actor_loss_atk = batch_size*actor_loss_atk / \
+                            (processed_samples-last_loss_average_atk)
+                        critic_loss_atk = batch_size*critic_loss_atk / \
+                            (processed_samples-last_loss_average_atk)
+                        print("avg_reward_atk:%.4f, avg_loss_atk:%f" %
+                              (reward_avg['reward_atk'], actor_loss_atk))
+                        tracker_atk.track_training(
+                            processed_samples, reward_avg['reward_atk'], actor_loss_atk, critic_loss_atk)
+                        actor_loss_atk = 0.0
+                        critic_loss_atk = 0.0
+                        last_loss_average_atk = processed_samples
 
-                    exp_buffer.sync_exps_to_file(
-                        data_path + "/buffer/" + run_name + ".exb")
+                    exp_buffer_atk.sync_exps_to_file(
+                        data_path + "/buffer/" + run_name_atk + ".exb")
 
                 except Exception:
-                    with open(run_name + ".err", 'a') as errfile:
+                    with open(run_name_atk + ".err", 'a') as errfile:
+                        errfile.write("!!! Exception caught on training !!!")
+                        errfile.write(traceback.format_exc())
+
+                try:
+                    print("saving goalkeeper checkpoint with %d/%d collected/processed samples with best reward %f..." %
+                          (collected_samples, processed_samples, best_reward_gk))
+                    save_checkpoint({
+                        'model_type': 'ddpg',
+                        'collected_samples': collected_samples,
+                        'processed_samples': processed_samples,
+                        'state_dict_act': act_net['act_net_gk'].state_dict(),
+                        'state_dict_crt': crt_net_gk.state_dict(),
+                        'tgt_act_state_dict': tgt_act_net_gk.target_model.state_dict(),
+                        'tgt_crt_state_dict': tgt_crt_net_gk.target_model.state_dict(),
+                        'reward': reward_avg['reward_gk'],
+                        'optimizer_act': optimizer_act_gk.state_dict(),
+                        'optimizer_crt': optimizer_crt_gk.state_dict(),
+                    }, is_best_gk, "model/" + run_name_gk + ".pth")
+
+                    if processed_samples > last_loss_average:
+                        actor_loss_gk = batch_size*actor_loss_gk / \
+                            (processed_samples-last_loss_average_gk)
+                        critic_loss_gk = batch_size*critic_loss_gk / \
+                            (processed_samples-last_loss_average_gk)
+                        print("avg_reward_gk:%.4f, avg_loss_gk:%f" %
+                              (reward_avg['reward_gk'], actor_loss_gk))
+                        tracker_gk.track_training(
+                            processed_samples, reward_avg['reward_gk'], actor_loss_gk, critic_loss_gk)
+                        actor_loss_gk = 0.0
+                        critic_loss_gk = 0.0
+                        last_loss_average_gk = processed_samples
+
+                    exp_buffer_gk.sync_exps_to_file(
+                        data_path + "/buffer/" + run_name_gk + ".exb")
+
+                except Exception:
+                    with open(run_name_gk + ".err", 'a') as errfile:
                         errfile.write("!!! Exception caught on training !!!")
                         errfile.write(traceback.format_exc())
 
@@ -478,7 +564,11 @@ def train(model_params, act_net, device,
     except Exception:
         print("!!! Exception caught on training !!!")
         print(traceback.format_exc())
-        with open(run_name+".err", 'a') as errfile:
+        with open(run_name_atk+".err", 'a') as errfile:
+            errfile.write("!!! Exception caught on training !!!")
+            errfile.write(traceback.format_exc())
+            
+        with open(run_name_gk+".err", 'a') as errfile:
             errfile.write("!!! Exception caught on training !!!")
             errfile.write(traceback.format_exc())
 
