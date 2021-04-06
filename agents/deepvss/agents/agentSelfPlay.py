@@ -122,11 +122,11 @@ def load_actor_model(net, checkpoint):
 def play(params, net, device, exp_queue, agent_env, test, writer, collected_samples, finish_event):
 
     try:
-        agentAtk = ddpg_model.AgentDDPG(net[0], device=device[0],
+        agentAtk = ddpg_model.AgentDDPG(net['net_atk'], device=device['device_atk'],
                                      ou_teta=params['ou_teta'],
                                      ou_sigma=params['ou_sigma'])
         
-        agentGk = ddpg_model.AgentDDPG(net[1], device=device[1],
+        agentGk = ddpg_model.AgentDDPG(net['net_gk'], device=device['device_gk'],
                                      ou_teta=params['ou_teta'],
                                      ou_sigma=params['ou_sigma'])
 
@@ -147,14 +147,14 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
             action_gk = agentGk(state, steps)
             next_state, reward, done, info = agent_env.step(action)
             steps += 1
-            epi_reward_atk += reward[0]
-            epi_reward_gk += reward[1]
+            epi_reward_atk += reward['reward_atk']
+            epi_reward_gk += reward['reward_gk']
             # agent_env.render()
             next_state = next_state if not done else None
             exp_atk = ptan.experience.ExperienceFirstLast(state, action_atk,
-                                                      reward[0], next_state)
+                                                      reward['reward_atk'], next_state)
             exp_gk = ptan.experience.ExperienceFirstLast(state, action_gk,
-                                                      reward[1], next_state)
+                                                      reward['reward_gk'], next_state)
             state = next_state
             if not test and not evaluation:
                 exp_queue.put({'exp_atk': exp_atk, 'exp_gk': exp_gk})
@@ -195,7 +195,8 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
                 
 
                 print(f'<======Match {matches_played}======>')
-                print(f'-------Reward:', epi_reward)
+                print(f'-------Reward Attacker:', epi_reward_atk)
+                print(f'-------Reward Goalkeeper:', epi_reward_gk)
                 print(f'-------FPS:', fps)
                 print(f'<==================================>\n')
                 epi_reward_atk = 0
@@ -567,7 +568,7 @@ def train(model_params, act_net, device,
         with open(run_name_atk+".err", 'a') as errfile:
             errfile.write("!!! Exception caught on training !!!")
             errfile.write(traceback.format_exc())
-            
+
         with open(run_name_gk+".err", 'a') as errfile:
             errfile.write("!!! Exception caught on training !!!")
             errfile.write(traceback.format_exc())
