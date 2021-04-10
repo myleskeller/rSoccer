@@ -145,7 +145,7 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
         while not finish_event.is_set():
             action_atk = agentAtk(state, steps)
             action_gk = agentGk(state, steps)
-            next_state, reward, done, info = agent_env.step(action)
+            next_state, reward, done, info = agent_env.step({'action_atk': action_atk, 'action_gk': action_gk})
             steps += 1
             epi_reward_atk += reward['reward_atk']
             epi_reward_gk += reward['reward_gk']
