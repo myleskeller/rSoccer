@@ -251,6 +251,25 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
                               v_wheel2=random.uniform(-1, 1)))
         return commands
 
+    def _actions_to_v_wheels(self, actions):
+        left_wheel_speed = actions[0] * self.rsim.linear_speed_range
+        right_wheel_speed = actions[1] * self.rsim.linear_speed_range
+
+        left_wheel_speed, right_wheel_speed = np.clip(
+            (left_wheel_speed, right_wheel_speed),
+            -self.rsim.linear_speed_range,
+            self.rsim.linear_speed_range
+        )
+
+        # Deadzone
+        if -self.v_wheel_deadzone < left_wheel_speed < self.v_wheel_deadzone:
+            left_wheel_speed = 0
+
+        if -self.v_wheel_deadzone < right_wheel_speed < self.v_wheel_deadzone:
+            right_wheel_speed = 0
+
+        return left_wheel_speed, right_wheel_speed
+
     def _calculate_future_point(self, pos, vel):
         if vel[0] > 0:
             goal_center = np.array([self.field_params['field_length'] / 2, 0])
