@@ -166,13 +166,18 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
         observation = {'observation_atk': [], 
                        'observation_gk': []}
 
-        observation.append(self.norm_pos(self.frame.ball.x))
-        observation.append(self.norm_pos(self.frame.ball.y))
-        observation.append(self.norm_v(self.frame.ball.v_x))
-        observation.append(self.norm_v(self.frame.ball.v_y))
+        observation['observation_gk'].append(self.norm_pos(self.frame.ball.x))
+        observation['observation_gk'].append(self.norm_pos(self.frame.ball.y))
+        observation['observation_gk'].append(self.norm_v(self.frame.ball.v_x))
+        observation['observation_gk'].append(self.norm_v(self.frame.ball.v_y))
 
+        observation['observation_atk'].append(self.norm_pos(self.frame.ball.x))
+        observation['observation_atk'].append(self.norm_pos(self.frame.ball.y))
+        observation['observation_atk'].append(self.norm_v(self.frame.ball.v_x))
+        observation['observation_atk'].append(self.norm_v(self.frame.ball.v_y))
+
+        # Goalkeeper Observation
         for i in range(self.n_robots_blue):
-            # Goalkeeper Observation
             observation['observation_gk'].append(self.norm_pos(self.frame.robots_blue[i].x))
             observation['observation_gk'].append(self.norm_pos(self.frame.robots_blue[i].y))
             observation['observation_gk'].append(
@@ -184,23 +189,17 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
             observation['observation_gk'].append(self.norm_v(self.frame.robots_blue[i].v_x))
             observation['observation_gk'].append(self.norm_v(self.frame.robots_blue[i].v_y))
             observation['observation_gk'].append(self.norm_w(self.frame.robots_blue[i].v_theta))
-            
-            # Attacker Observation
-            observation['observation_atk'].append(self.norm_pos(self.frame.robots_blue[i].x))
-            observation['observation_atk'].append(self.norm_pos(self.frame.robots_blue[i].y))
-            observation['observation_atk'].append(self.norm_v(self.frame.robots_blue[i].v_x))
-            observation['observation_atk'].append(self.norm_v(self.frame.robots_blue[i].v_y))
-            observation['observation_atk'].append(self.norm_w(self.frame.robots_blue[i].v_theta))
-
+        
+        # Goalkeeper Observation
         for i in range(self.n_robots_yellow):
-            # Goalkeeper Observation
             observation['observation_gk'].append(self.norm_pos(self.frame.robots_yellow[i].x))
             observation['observation_gk'].append(self.norm_pos(self.frame.robots_yellow[i].y))
             observation['observation_gk'].append(self.norm_v(self.frame.robots_yellow[i].v_x))
             observation['observation_gk'].append(self.norm_v(self.frame.robots_yellow[i].v_y))
             observation['observation_gk'].append(self.norm_w(self.frame.robots_yellow[i].v_theta))
 
-            # Attacker Observation
+        # Attacker Observation
+        for i in range(self.n_robots_yellow):
             observation['observation_atk'].append(self.norm_pos(self.frame.robots_yellow[i].x))
             observation['observation_atk'].append(self.norm_pos(self.frame.robots_yellow[i].y))
             observation['observation_atk'].append(
@@ -211,9 +210,18 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
             )
             observation['observation_atk'].append(self.norm_v(self.frame.robots_yellow[i].v_x))
             observation['observation_atk'].append(self.norm_v(self.frame.robots_yellow[i].v_y))
-            observation['observation_atk'].append(self.norm_w(self.frame.robots_yellow[i].v_theta))      
+            observation['observation_atk'].append(self.norm_w(self.frame.robots_yellow[i].v_theta)) 
+        
+        # Attacker Observation
+        for i in range(self.n_robots_blue):
+            observation['observation_atk'].append(self.norm_pos(self.frame.robots_blue[i].x))
+            observation['observation_atk'].append(self.norm_pos(self.frame.robots_blue[i].y))
+            observation['observation_atk'].append(self.norm_v(self.frame.robots_blue[i].v_x))
+            observation['observation_atk'].append(self.norm_v(self.frame.robots_blue[i].v_y))
+            observation['observation_atk'].append(self.norm_w(self.frame.robots_blue[i].v_theta))
 
-        return np.array(observation)
+        return {'observation_atk': np.array(observation['observation_atk']),
+                'observation_gk': np.array(observation['observation_gk'])}
 
     def _get_commands(self, actions):
         commands = []
