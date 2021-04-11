@@ -225,30 +225,35 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
 
     def _get_commands(self, actions):
         commands = []
-        v_wheel1 = actions[0]
-        v_wheel2 = actions[1]
-        self.energy_penalty = -(abs(v_wheel1 * 100) + abs(v_wheel2 * 100))
-        commands.append(Robot(yellow=False, id=0, v_wheel1=v_wheel1,
-                              v_wheel2=v_wheel2))
+        self.actions_atk = {}
+        self.actions_gk = {}
+        self.actions = {}
+        
+        self.actions_atk[0] = actions['action_atk']
+        self.actions_gk[0] = actions['action_gk']
+        self.actions[0] = actions
+        # self.energy_penalty = -(abs(v_wheel1 * 100) + abs(v_wheel2 * 100))
+        v_wheel0_atk, v_wheel1_atk = self._actions_to_v_wheels(actions['action_atk'])
+        v_wheel0_gk, v_wheel1_gk = self._actions_to_v_wheels(actions['action_gk'])
+        commands.append(Robot(yellow=False, id=0, v_wheel0=v_wheel0_gk,
+                              v_wheel1=v_wheel1_gk))
 
         # Send random commands to the other robots
-        commands.append(Robot(yellow=False, id=1,
-                              v_wheel1=random.uniform(-1, 1),
-                              v_wheel2=random.uniform(-1, 1)))
-        commands.append(Robot(yellow=False, id=2,
-                              v_wheel1=random.uniform(-1, 1),
-                              v_wheel2=random.uniform(-1, 1)))
+        for i in range(1, self.n_robots_blue):
+            actions = self.ou_actions[i].sample()
+            self.actions[i] = actions
+            v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
+            commands.append(Robot(yellow=False, id=i, v_wheel0=v_wheel0,
+                                  v_wheel1=v_wheel1))
 
-        atk_action = self.attacker.get_action(self._atk_obs())
-        # we invert the speed on the wheels because of the attacker's reflection on the Y axis.
-        commands.append(Robot(yellow=True, id=0, v_wheel1=atk_action[1],
-                              v_wheel2=atk_action[0]))
-        commands.append(Robot(yellow=True, id=1,
-                              v_wheel1=random.uniform(-1, 1),
-                              v_wheel2=random.uniform(-1, 1)))
-        commands.append(Robot(yellow=True, id=2,
-                              v_wheel1=random.uniform(-1, 1),
-                              v_wheel2=random.uniform(-1, 1)))
+        commands.append(Robot(yellow=True, id=0, v_wheel0=v_wheel0_atk,
+                              v_wheel1=v_wheel1_atk))
+        for i in range(1, self.n_robots_yellow):
+            actions = self.ou_actions[self.n_robots_blue+i].sample()
+            v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
+            commands.append(Robot(yellow=True, id=i, v_wheel0=v_wheel0,
+                                  v_wheel1=v_wheel1))
+
         return commands
 
     def _actions_to_v_wheels(self, actions):
