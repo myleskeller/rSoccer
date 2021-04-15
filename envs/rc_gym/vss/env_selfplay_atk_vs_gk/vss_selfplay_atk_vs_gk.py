@@ -116,6 +116,15 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
         # self.initialize_atk()
         print('Environment initialized')
     
+    def reset(self):
+        self.actions = None
+        self.reward_shaping_total = None
+        self.previous_ball_potential = None
+        for ou in self.ou_actions:
+            ou.reset()
+
+        return super().reset()
+    
     def step(self, action):
         observation, reward, done, _ = super().step(action)
         return observation, reward, done, self.reward_shaping_total
