@@ -143,18 +143,23 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
         steps = 0
 
         while not finish_event.is_set():
-            action_atk = agentAtk(state, steps)
-            action_gk = agentGk(state, steps)
+            # TO DO
+            # Ajeitar o tipo do state é um dicionário 'observation_atk' e 'observation_gk'
+            # mesma coisa para o next_state
+            action_atk = agentAtk(state['observation_atk'], steps)
+            action_gk = agentGk(state['observation_gk'], steps)
             next_state, reward, done, info = agent_env.step({'action_atk': action_atk, 'action_gk': action_gk})
             steps += 1
             epi_reward_atk += reward['reward_atk']
             epi_reward_gk += reward['reward_gk']
             # agent_env.render()
             next_state = next_state if not done else None
-            exp_atk = ptan.experience.ExperienceFirstLast(state, action_atk,
-                                                      reward['reward_atk'], next_state)
-            exp_gk = ptan.experience.ExperienceFirstLast(state, action_gk,
-                                                      reward['reward_gk'], next_state)
+            next_state_atk = next_state['observation_atk'] if next_state is not None else None
+            next_state_gk = next_state['observation_gk'] if next_state is not None else None
+            exp_atk = ptan.experience.ExperienceFirstLast(state['observation_atk'], action_atk,
+                                                      reward['reward_atk'], next_state_atk)
+            exp_gk = ptan.experience.ExperienceFirstLast(state['observation_gk'], action_gk,
+                                                      reward['reward_gk'], next_state_gk)
             state = next_state
             if not test and not evaluation:
                 exp_queue.put({'exp_atk': exp_atk, 'exp_gk': exp_gk})
