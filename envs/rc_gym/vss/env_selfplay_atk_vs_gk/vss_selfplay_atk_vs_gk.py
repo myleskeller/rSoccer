@@ -506,26 +506,58 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
         """
         field_half_length = self.field_params['field_length'] / 2
         field_half_width = self.field_params['field_width'] / 2
+
         def x(): return random.uniform(-field_half_length + 0.1,
                                        field_half_length - 0.1)
+
         def y(): return random.uniform(-field_half_width + 0.1,
                                        field_half_width - 0.1)
+        
+        def theta(): return random.uniform(-180, 180)
+
         pos_frame: Frame = Frame()
 
-        pos_frame.ball.x = random.uniform(-field_half_length + 0.1,
-                                          field_half_length - 0.1)
-        pos_frame.ball.y = random.uniform(-field_half_width + 0.1,
-                                          field_half_width - 0.1)
+        pos_frame.ball.x = x()
+        pos_frame.ball.y = y()
+        pos_frame.ball.v_x = 0.
+        pos_frame.ball.v_y = 0.
 
-        pos_frame.robots_blue[0] = Robot(x=-field_half_length + 0.05,
-                                         y=0.0,
-                                         theta=0)
-        pos_frame.robots_blue[1] = Robot(x=x(), y=y(), theta=0)
-        pos_frame.robots_blue[2] = Robot(x=x(), y=y(), theta=0)
+        # pos_frame.robots_blue[0] = Robot(x=-field_half_length + 0.05,
+        #                                  y=0.0,
+        #                                  theta=0)
 
-        pos_frame.robots_yellow[0] = Robot(x=x(), y=y(), theta=math.pi)
-        pos_frame.robots_yellow[1] = Robot(x=x(), y=y(), theta=math.pi)
-        pos_frame.robots_yellow[2] = Robot(x=x(), y=y(), theta=math.pi)
+        agents = []
+        agents.append(Robot(x=-field_half_length + 0.05, y=0.0, theta=0))
+
+        for i in range(1, self.n_robots_blue):
+            pos_frame.robots_blue[i] = Robot(x=x(), y=y(), theta=theta())
+            agents.append(pos_frame.robots_blue[i])
+
+        for i in range(self.n_robots_yellow):
+            pos_frame.robots_yellow[i] = Robot(x=x(), y=y(), theta=theta())
+            agents.append(pos_frame.robots_yellow[i])
+
+        def same_position_ref(obj, ref, radius):
+            if obj.x >= ref.x - radius and obj.x <= ref.x + radius and \
+                    obj.y >= ref.y - radius and obj.y <= ref.y + radius:
+                return True
+            return False
+
+        radius_ball = self.field.ball_radius
+        radius_robot = self.field.rbt_radius
+
+        for i in range(1, len(agents)):
+            while same_position_ref(agents[i], pos_frame.ball, radius_ball):
+                agents[i] = Robot(x=x(), y=y(), theta=theta())
+            for j in range(i):
+                while same_position_ref(agents[i], agents[j], radius_robot):
+                    agents[i] = Robot(x=x(), y=y(), theta=theta())
+
+        for i in range(self.n_robots_blue):
+            pos_frame.robots_blue[i] = agents[i]
+
+        for i in range(self.n_robots_yellow):
+            pos_frame.robots_yellow[i] = agents[i+self.n_robots_blue]
 
         return pos_frame
 
