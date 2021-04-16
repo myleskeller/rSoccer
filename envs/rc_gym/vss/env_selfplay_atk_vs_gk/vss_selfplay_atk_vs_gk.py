@@ -329,7 +329,7 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
                         self.frame.robots_blue[0].y])
         ball = np.array([self.frame.ball.x, self.frame.ball.y])
         distance_gk_ball = np.linalg.norm(pos - ball) * 100 
-        field_half_length = self.field_params['field_length'] / 2
+        field_half_length = self.field.length / 2
 
         defense_reward = 0
         if distance_gk_ball < 8 and not self.isInside:
@@ -360,8 +360,8 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
         Difference of potential of the ball in time_step seconds.
         '''
         # Calculate ball potential
-        length_cm = self.field_params['field_length'] * 100
-        half_lenght = (self.field_params['field_length'] / 2.0)\
+        length_cm = self.field.length * 100
+        half_lenght = (self.field.length / 2.0)\
             + self.field_params['goal_depth']
 
         # Inverti sinais da operação de dx_d e dx_a, só precisa disso?
@@ -468,7 +468,7 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
                     move_reward_gk = self.__move_reward()
                     move_y_reward_gk = self.__move_reward_y()
                     ball_defense_reward_gk = self.__defended_ball() 
-                    dist_robot_own_goal_bar_gk = -self.field_params['field_length'] / \
+                    dist_robot_own_goal_bar_gk = -self.field.length / \
                         2 + 0.15 - self.frame.robots_blue[0].x
 
                     reward_gk = w_move_y * move_y_reward_gk + \
@@ -512,8 +512,8 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
         Goalie starts at the center of the goal, striker and ball randomly.
         Other robots also starts at random positions.
         """
-        field_half_length = self.field_params['field_length'] / 2
-        field_half_width = self.field_params['field_width'] / 2
+        field_half_length = self.field.length / 2
+        field_half_width = self.field.width / 2
 
         def x(): return random.uniform(-field_half_length + 0.1,
                                        field_half_length - 0.1)
