@@ -25,6 +25,11 @@ register(id='VSSFIRA-v0',
          max_episode_steps=1200
          )
 
+register(id='VSSSelfPlay-v0',
+         entry_point='rc_gym.vss.env_selfplay_atk_vs_gk:VSSSelfplayAtkGk',
+         max_episode_steps=1200
+         )
+
 register(id='SSLGoToBall-v0',
          entry_point='rc_gym.ssl.ssl_go_to_ball:SSLGoToBallEnv',
          kwargs={'field_type' : 2, 'n_robots_yellow' : 0},
