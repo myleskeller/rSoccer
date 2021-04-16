@@ -351,7 +351,7 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
                 self.isInside = False
                 self.previous_ball_direction.clear()
                 
-                if self.frame.robots_blue[0].x <= -0.63
+                if self.frame.robots_blue[0].x <= -0.63:
                     defense_reward = 1
         
         return defense_reward
