@@ -145,31 +145,46 @@ if __name__ == "__main__":
         print(f'Model params:\n{dict_to_str(model_params)}\n')
 
         if model_params['agent'] == 'DDPG':
-            from agents.agentGK import train, play, create_actor_model, load_actor_model
-        elif model_params['agent'] == 'SAC':
-            from agents.agentSAC import train, play, create_actor_model, load_actor_model
+            from agents.agentSelfPlay import train, play, create_actor_model, load_actor_model
+        else:
+            raise Exception("!!!! Agent " + model_params['agent'] + " doesn't Available !!!!")
 
-        device = torch.device("cuda" if args.cuda else "cpu")
-        net = create_actor_model(model_params, state_shape,
-                                 action_shape, device)
+        device_gk = torch.device("cuda" if args.cuda else "cpu")
+        device_atk = torch.device("cuda" if args.cuda else "cpu")
+        net_gk = create_actor_model(model_params, state_shape,
+                                 action_shape, device_gk)
+        net_atk = create_actor_model(model_params, state_shape,
+                                 action_shape, device_atk)
 
         checkpoint = {}
 
         if len(args.resume) > 0:  # load checkpoint
+            # TODO passando parâmetro resume?
             args.resume = args.resume[0]
-            load = True
+            load_gk = True
+            load_atk = True
             if args.resume is None:
                 print("Looking for default pth file")
-                args.resume = "model/" + run_name + ".pth"
-                load = os.path.isfile(args.resume)
-                if not load:
+                args.resume_gk = "model/" + run_name + "_gk" + ".pth"
+                args.resume_atk = "model/" + run_name + "_atk" + ".pth"
+                load_gk = os.path.isfile(args.resume_gk)
+                load_atk = os.path.isfile(args.resume_atk)
+                if not load_atk:
                     print('File not found:"%s" (nothing to resume)' %
-                          args.resume)
+                          args.resume_atk)
+                if not load_gk:
+                    print('File not found:"%s" (nothing to resume)' %
+                          args.resume_gk)
 
-            if load:
-                print("=> loading checkpoint '%s'" % args.resume)
-                checkpoint = torch.load(args.resume, map_location=device)
-                net = load_actor_model(net, checkpoint)
+            if load_gk:
+                print("=> loading checkpoint '%s'" % args.resume_gk)
+                checkpoint_gk = torch.load(args.resume_gk, map_location=device_gk)
+                net_gk = load_actor_model(net_gk, checkpoint_gk)
+
+                if load_atk:
+                    print("=> loading checkpoint '%s'" % args.resume_atk)
+                    checkpoint_atk = torch.load(args.resume_atk, map_location=device_atk)
+                    net_atk = load_actor_model(net_atk, checkpoint_atk)
 
                 if args.test:
                     checkpoint['collected_samples'] = checkpoint['processed_samples'] = 0
@@ -200,7 +215,9 @@ if __name__ == "__main__":
         print("Threads available: %d" % torch.get_num_threads())
 
         th_a = threading.Thread(target=play, args=(
-            model_params, net, device, exp_queue, env, args.test, writer, collected_samples, finish_event))
+            model_params, {'net_atk': net_atk, 'net_gk': net_gk}, 
+            {'device_atk': device_atk, 'device_gk': device_gk}, exp_queue, 
+            env, args.test, writer, collected_samples, finish_event))
         play_threads.append(th_a)
         th_a.start()
 
@@ -213,9 +230,11 @@ if __name__ == "__main__":
             model_params['writer_path'] = writer_path
             model_params['action_format'] = '2f'
             model_params['state_format'] = f"{state_shape.shape[0]}f"
-            net.share_memory()
+            net_atk.share_memory()
+            net_gk.share_memory()
             train_process = mp.Process(target=train, args=(
-                model_params, net, device, exp_queue, finish_event, checkpoint))
+                model_params, {'net_atk': net_atk, 'net_gk': net_gk}, {'device_atk': device_atk, 'device_gk': device_gk},
+                exp_queue, finish_event, checkpoint))
             train_process.start()
             train_process.join()
             print("Train process joined.")
@@ -234,7 +253,14 @@ if __name__ == "__main__":
         if exp_queue:
             while exp_queue.qsize() > 0:
                 exp_queue.get()
+        
+        # if exp_queue['exp_atk']:
+        #     while exp_queue['exp_atk'].qsize() > 0:
+        #         exp_queue['exp_atk'].get()
 
+        # if exp_queue['exp_gk']:
+        #     while exp_queue['exp_gk'].qsize() > 0:
+        #         exp_queue['exp_gk'].get()
         print('queue is empty')
 
         if train_process is not None:
