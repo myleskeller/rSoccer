@@ -253,14 +253,7 @@ if __name__ == "__main__":
         if exp_queue:
             while exp_queue.qsize() > 0:
                 exp_queue.get()
-        
-        # if exp_queue['exp_atk']:
-        #     while exp_queue['exp_atk'].qsize() > 0:
-        #         exp_queue['exp_atk'].get()
-
-        # if exp_queue['exp_gk']:
-        #     while exp_queue['exp_gk'].qsize() > 0:
-        #         exp_queue['exp_gk'].get()
+                
         print('queue is empty')
 
         if train_process is not None:
