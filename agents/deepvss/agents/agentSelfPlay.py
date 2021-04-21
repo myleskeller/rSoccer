@@ -180,7 +180,7 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
                 # writer.add_scalar("rw/move_gk", info['move_gk'], matches_played)
                 writer.add_scalar("rw/move_y_gk", info['move_y_gk'], matches_played)
                 writer.add_scalar(
-                    "rw/ball_grad_atk", info['ball_grad_atk'], matches_played)
+                    "rw/ball_grad_atk", info['ball_grad'], matches_played)
                 writer.add_scalar("rw/energy_atk", info['energy_atk'], matches_played)
                 writer.add_scalar("rw/goals_blue",
                                   info['goals_blue'],
@@ -246,8 +246,7 @@ def train(model_params, act_net, device,
 
     try:
         data_path = model_params['data_path']
-        run_name_atk = model_params['run_name']['run_name_atk']
-        run_name_gk = model_params['run_name']['run_name_gk']
+        run_name = model_params['run_name']
 
         exp_buffer_atk = common.PersistentExperienceReplayBuffer(experience_source=None,
                                                              buffer_size=model_params['replay_size']) if \
@@ -272,27 +271,27 @@ def train(model_params, act_net, device,
         crt_net_atk = ddpg_model.DDPG_MODELS_CRITIC[model_params['crt_type']](model_params['state_shape'].shape[0],
                                                                           model_params['action_shape'].shape[0]).to(device['device_atk'])
         optimizer_act_atk = torch.optim.Adam(
-            act_net['act_net_atk'].parameters(), lr=model_params['learning_rate'])
+            act_net['net_atk'].parameters(), lr=model_params['learning_rate'])
         optimizer_crt_atk = torch.optim.Adam(
             crt_net_atk.parameters(), lr=model_params['learning_rate'])
-        tgt_act_net_atk = ptan.agent.TargetNet(act_net['act_net_atk'])
+        tgt_act_net_atk = ptan.agent.TargetNet(act_net['net_atk'])
         tgt_crt_net_atk = ptan.agent.TargetNet(crt_net_atk)
         
         crt_net_gk = ddpg_model.DDPG_MODELS_CRITIC[model_params['crt_type']](model_params['state_shape'].shape[0],
                                                                           model_params['action_shape'].shape[0]).to(device['device_gk'])
         optimizer_act_gk = torch.optim.Adam(
-            act_net['act_net_gk'].parameters(), lr=model_params['learning_rate'])
+            act_net['net_gk'].parameters(), lr=model_params['learning_rate'])
         optimizer_crt_gk = torch.optim.Adam(
             crt_net_gk.parameters(), lr=model_params['learning_rate'])
-        tgt_act_net_gk = ptan.agent.TargetNet(act_net['act_net_gk'])
+        tgt_act_net_gk = ptan.agent.TargetNet(act_net['net_gk'])
         tgt_crt_net_gk = ptan.agent.TargetNet(crt_net_gk)
 
-        act_net['act_net_atk'].train(True)
+        act_net['net_atk'].train(True)
         crt_net_atk.train(True)
         tgt_act_net_atk.target_model.train(True)
         tgt_crt_net_atk.target_model.train(True)
 
-        act_net['act_net_gk'].train(True)
+        act_net['net_gk'].train(True)
         crt_net_gk.train(True)
         tgt_act_net_gk.target_model.train(True)
         tgt_crt_net_gk.target_model.train(True)
@@ -341,13 +340,13 @@ def train(model_params, act_net, device,
                 load_gk = True
                 if exp is None:
                     print("Looking for default exb file for the attacker")
-                    exp_atk = data_path + "/buffer/" + run_name_atk + ".exb"
+                    exp_atk = data_path + "/buffer/" + run_name + "_atk" + ".exb"
                     load_atk = os.path.isfile(exp_atk)
                     if not load_atk:
                         print('File not found:"%s" (nothing to resume)' % exp_atk)
                     
                     print("Looking for default exb file for the goalkeeper")
-                    exp_gk = data_path + "/buffer/" + run_name_gk + ".exb"
+                    exp_gk = data_path + "/buffer/" + run_name + "_gk" + ".exb"
                     load_gk = os.path.isfile(exp_gk)
                     if not load_gk:
                         print('File not found:"%s" (nothing to resume)' % exp_gk)
@@ -543,7 +542,7 @@ def train(model_params, act_net, device,
                         'optimizer_crt': optimizer_crt_gk.state_dict(),
                     }, is_best_gk, "model/" + run_name_gk + ".pth")
 
-                    if processed_samples > last_loss_average:
+                    if processed_samples > last_loss_average_gk:
                         actor_loss_gk = batch_size*actor_loss_gk / \
                             (processed_samples-last_loss_average_gk)
                         critic_loss_gk = batch_size*critic_loss_gk / \
