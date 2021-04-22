@@ -438,13 +438,13 @@ def train(model_params, act_net, device,
                     exp_buffer_gk.update_priorities(mem_idxs_gk, mem_loss_gk)
 
                 act_loss_v_atk = calc_loss_ddpg_actor(
-                    batch_atk, act_net['act_net_atk'], crt_net_atk, cuda=(device['device_atk'].type == "cuda"),
+                    batch_atk, act_net['net_atk'], crt_net_atk, cuda=(device['device_atk'].type == "cuda"),
                     cuda_async=True)
                 act_loss_v_atk.backward()
                 optimizer_act_atk.step()
 
                 act_loss_v_gk = calc_loss_ddpg_actor(
-                    batch_gk, act_net['act_net_gk'], crt_net_gk, cuda=(device['device_gk'].type == "cuda"),
+                    batch_gk, act_net['net_gk'], crt_net_gk, cuda=(device['device_gk'].type == "cuda"),
                     cuda_async=True)
                 act_loss_v_gk.backward()
                 optimizer_act_gk.step()
@@ -496,14 +496,14 @@ def train(model_params, act_net, device,
                         'model_type': 'ddpg',
                         'collected_samples': collected_samples,
                         'processed_samples': processed_samples,
-                        'state_dict_act': act_net['act_net_atk'].state_dict(),
+                        'state_dict_act': act_net['net_atk'].state_dict(),
                         'state_dict_crt': crt_net_atk.state_dict(),
                         'tgt_act_state_dict': tgt_act_net_atk.target_model.state_dict(),
                         'tgt_crt_state_dict': tgt_crt_net_atk.target_model.state_dict(),
                         'reward': reward_avg['reward_atk'],
                         'optimizer_act': optimizer_act_atk.state_dict(),
                         'optimizer_crt': optimizer_crt_atk.state_dict(),
-                    }, is_best_atk, "model/" + run_name_atk + ".pth")
+                    }, is_best_atk, "model/" + run_name + "_atk" + ".pth")
 
                     if processed_samples > last_loss_average_atk:
                         actor_loss_atk = batch_size*actor_loss_atk / \
@@ -519,10 +519,10 @@ def train(model_params, act_net, device,
                         last_loss_average_atk = processed_samples
 
                     exp_buffer_atk.sync_exps_to_file(
-                        data_path + "/buffer/" + run_name_atk + ".exb")
+                        data_path + "/buffer/" + run_name + "_atk" + ".exb")
 
                 except Exception:
-                    with open(run_name_atk + ".err", 'a') as errfile:
+                    with open(run_name + "_atk" + ".err", 'a') as errfile:
                         errfile.write("!!! Exception caught on training !!!")
                         errfile.write(traceback.format_exc())
 
@@ -533,14 +533,14 @@ def train(model_params, act_net, device,
                         'model_type': 'ddpg',
                         'collected_samples': collected_samples,
                         'processed_samples': processed_samples,
-                        'state_dict_act': act_net['act_net_gk'].state_dict(),
+                        'state_dict_act': act_net['net_gk'].state_dict(),
                         'state_dict_crt': crt_net_gk.state_dict(),
                         'tgt_act_state_dict': tgt_act_net_gk.target_model.state_dict(),
                         'tgt_crt_state_dict': tgt_crt_net_gk.target_model.state_dict(),
                         'reward': reward_avg['reward_gk'],
                         'optimizer_act': optimizer_act_gk.state_dict(),
                         'optimizer_crt': optimizer_crt_gk.state_dict(),
-                    }, is_best_gk, "model/" + run_name_gk + ".pth")
+                    }, is_best_gk, "model/" + run_name + "_gk" + ".pth")
 
                     if processed_samples > last_loss_average_gk:
                         actor_loss_gk = batch_size*actor_loss_gk / \
@@ -556,10 +556,10 @@ def train(model_params, act_net, device,
                         last_loss_average_gk = processed_samples
 
                     exp_buffer_gk.sync_exps_to_file(
-                        data_path + "/buffer/" + run_name_gk + ".exb")
+                        data_path + "/buffer/" + run_name + "_gk" + ".exb")
 
                 except Exception:
-                    with open(run_name_gk + ".err", 'a') as errfile:
+                    with open(run_name + "_gk" + ".err", 'a') as errfile:
                         errfile.write("!!! Exception caught on training !!!")
                         errfile.write(traceback.format_exc())
 
@@ -569,11 +569,11 @@ def train(model_params, act_net, device,
     except Exception:
         print("!!! Exception caught on training !!!")
         print(traceback.format_exc())
-        with open(run_name_atk+".err", 'a') as errfile:
+        with open(run_name + "atk" +".err", 'a') as errfile:
             errfile.write("!!! Exception caught on training !!!")
             errfile.write(traceback.format_exc())
 
-        with open(run_name_gk+".err", 'a') as errfile:
+        with open(run_name + "gk" +".err", 'a') as errfile:
             errfile.write("!!! Exception caught on training !!!")
             errfile.write(traceback.format_exc())
 
