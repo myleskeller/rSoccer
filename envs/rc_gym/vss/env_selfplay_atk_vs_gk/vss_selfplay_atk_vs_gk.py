@@ -104,7 +104,6 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
                 OrnsteinUhlenbeckAction(self.action_space, dt=self.time_step)
             )
 
-
         self.last_frame = None
         self.energy_penalty = 0
         self.reward_shaping_total_gk = None
@@ -127,47 +126,6 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
     def step(self, action):
         observation, reward, done, _ = super().step(action)
         return observation, reward, done, self.reward_shaping_total
-
-    # def initialize_atk(self):
-    #     device = torch.device('cuda')
-    #     atk_path = os.path.dirname(os.path.realpath(
-    #         __file__)) + '/attacker/atk_model.pth'
-    #     self.attacker = DDPGActor(40, 2)
-    #     print(atk_path)
-    #     atk_checkpoint = torch.load(atk_path, map_location=device)
-    #     self.attacker.load_state_dict(atk_checkpoint['state_dict_act'])
-    #     self.attacker.eval()
-
-    # def _atk_obs(self):
-    #     observation = []
-    #     observation.append(self.norm_pos(-self.frame.ball.x))
-    #     observation.append(self.norm_pos(self.frame.ball.y))
-    #     observation.append(self.norm_v(-self.frame.ball.v_x))
-    #     observation.append(self.norm_v(self.frame.ball.v_y))
-        
-    #     #  we reflect the side that the attacker is attacking,
-    #     #  so that he will attack towards the goal where the goalkeeper is
-    #     for i in range(self.n_robots_yellow):
-    #         observation.append(self.norm_pos(-self.frame.robots_yellow[i].x))
-    #         observation.append(self.norm_pos(self.frame.robots_yellow[i].y))
-    #         observation.append(
-    #             np.sin(np.deg2rad(self.frame.robots_yellow[i].theta))
-    #         )
-    #         observation.append(
-    #             -np.cos(np.deg2rad(self.frame.robots_yellow[i].theta))
-    #         )
-    #         observation.append(self.norm_v(-self.frame.robots_yellow[i].v_x))
-    #         observation.append(self.norm_v(self.frame.robots_yellow[i].v_y))
-    #         observation.append(self.norm_w(-self.frame.robots_yellow[i].v_theta))
-
-    #     for i in range(self.n_robots_blue):
-    #         observation.append(self.norm_pos(-self.frame.robots_blue[i].x))
-    #         observation.append(self.norm_pos(self.frame.robots_blue[i].y))
-    #         observation.append(self.norm_v(-self.frame.robots_blue[i].v_x))
-    #         observation.append(self.norm_v(self.frame.robots_blue[i].v_y))
-    #         observation.append(self.norm_w(-self.frame.robots_blue[i].v_theta))
-
-    #     return np.array(observation)
 
     def _frame_to_observations(self):
 
@@ -342,7 +300,7 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
             direction_ball_vx = (self.frame.ball.v_x + 0.000001) / \
                                 (abs(self.frame.ball.v_x) + 0.000001)
             direction_ball_vy = (self.frame.ball.v_y + 0.000001) / \
-                                (abs(self.frame.ball.v_x) + 0.000001)
+                                (abs(self.frame.ball.v_y) + 0.000001)
 
             if (self.previous_ball_direction[0] != direction_ball_vx or \
                 self.previous_ball_direction[1] != direction_ball_vy) and \
