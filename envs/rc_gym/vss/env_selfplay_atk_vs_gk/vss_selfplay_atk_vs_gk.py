@@ -363,7 +363,7 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
         w_move = 0.2
         w_ball_pot = 0.1
         w_move_y  = 0.3
-        w_distance = 0.05
+        w_distance = 0.01
         w_ball_leave_area = 2.0
         reward_gk = 0
 
@@ -424,7 +424,7 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
                     reward_gk = w_move_y * move_y_reward_gk + \
                                 w_defense * ball_defense_reward + \
                                 w_ball_leave_area * ball_leave_area_reward
-                                # w_distance * dist_robot_own_goal_bar_gk + \
+                                w_distance * dist_robot_own_goal_bar_gk
                                 
                     # print("-------------------")
                     # print(reward_gk)
