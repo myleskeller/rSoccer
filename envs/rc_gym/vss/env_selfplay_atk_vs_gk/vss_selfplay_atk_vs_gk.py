@@ -109,15 +109,16 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
         self.reward_shaping_total_gk = None
         self.attacker = None
         self.previous_ball_direction = []
-        self.isInside = False
+        self.ballIsInsideZone = False
         self.ballInsideArea = False
-        # self.initialize_atk()
         print('Environment initialized')
     
     def reset(self):
         self.actions = None
         self.reward_shaping_total = None
         self.previous_ball_potential = None
+        self.ballIsInsideZone = False
+        self.ballInsideArea = False
         for ou in self.ou_actions:
             ou.reset()
 
@@ -290,13 +291,13 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
         field_half_length = self.field.length / 2
 
         defense_reward = 0
-        if distance_gk_ball < 8 and not self.isInside:
+        if distance_gk_ball < 8 and not self.ballIsInsideZone:
             self.previous_ball_direction.append((self.frame.ball.v_x + 0.000001) / \
                                                 (abs(self.frame.ball.v_x)+ 0.000001))
             self.previous_ball_direction.append((self.frame.ball.v_y + 0.000001) / \
                                                 (abs(self.frame.ball.v_y) + 0.000001))
-            self.isInside = True
-        elif self.isInside:
+            self.ballIsInsideZone = True
+        elif self.ballIsInsideZone:
             direction_ball_vx = (self.frame.ball.v_x + 0.000001) / \
                                 (abs(self.frame.ball.v_x) + 0.000001)
             direction_ball_vy = (self.frame.ball.v_y + 0.000001) / \
@@ -305,7 +306,7 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
             if (self.previous_ball_direction[0] != direction_ball_vx or \
                 self.previous_ball_direction[1] != direction_ball_vy) and \
                 self.frame.ball.x > -field_half_length+0.1:
-                self.isInside = False
+                self.ballIsInsideZone = False
                 self.previous_ball_direction.clear()
                 
                 if self.frame.robots_blue[0].x <= -0.63:
@@ -351,7 +352,7 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
         goal_score = 0
         move_reward = 0
         ball_potential = 0
-        move_y_reward = 0
+        move_y_reward_gk = 0
         dist_robot_own_goal_bar = 0
         ball_defense_reward = 0
         ball_leave_area_reward = 0
@@ -362,7 +363,7 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
         w_move = 0.2
         w_ball_pot = 0.1
         w_move_y  = 0.3
-        w_distance = 0.1
+        w_distance = 0.05
         w_ball_leave_area = 2.0
         reward_gk = 0
 
@@ -421,11 +422,16 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
                         2 + 0.15 - self.frame.robots_blue[0].x
 
                     reward_gk = w_move_y * move_y_reward_gk + \
-                                w_distance * dist_robot_own_goal_bar_gk + \
                                 w_defense * ball_defense_reward + \
                                 w_ball_leave_area * ball_leave_area_reward
+                                # w_distance * dist_robot_own_goal_bar_gk + \
+                                
+                    # print("-------------------")
+                    # print(reward_gk)
+                    # print(ball_defense_reward)
+                    # print(ball_leave_area_reward)
 
-                    self.reward_shaping_total['move_y_gk'] += w_move_y * move_y_reward
+                    self.reward_shaping_total['move_y_gk'] += w_move_y * move_y_reward_gk
                     self.reward_shaping_total['distance_own_goal_bar_gk'] += w_distance * dist_robot_own_goal_bar_gk
                     self.reward_shaping_total['defense_gk'] += ball_defense_reward * w_defense
                     self.reward_shaping_total['ball_leave_area_gk'] += w_ball_leave_area * ball_leave_area_reward
@@ -442,6 +448,11 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
                     w_ball_grad * grad_ball_potential_atk + \
                     w_energy * energy_penalty_atk
 
+                # print("----------------------------------")
+                # print(move_reward_atk)
+                # print(grad_ball_potential_atk)
+                # print(energy_penalty_atk)
+
                 self.reward_shaping_total['move_atk'] += w_move * move_reward_atk
                 self.reward_shaping_total['ball_grad'] += w_ball_grad \
                     * grad_ball_potential_atk
@@ -450,7 +461,6 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
             
             self.last_frame = self.frame
         done = goal or done
-
         return {'reward_atk': reward_atk, 'reward_gk': reward_gk}, done
 
     def _get_initial_positions_frame(self):
