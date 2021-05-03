@@ -410,7 +410,7 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
                     self.ballInsideArea = False
 
                 # This case the Goalkeeper leaves the gk area
-                if self.frame.robots_blue[0].x > -0.63 or self.frame.robots_blue[0].y > 0.4 \
+                if self.frame.robots_blue[0].x > -0.6 or self.frame.robots_blue[0].y > 0.4 \
                     or self.frame.robots_blue[0].y < -0.4:  
                     reward_gk = -5
 
@@ -423,9 +423,9 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
 
                     reward_gk = w_move_y * move_y_reward_gk + \
                                 w_defense * ball_defense_reward + \
-                                w_ball_leave_area * ball_leave_area_reward
+                                w_ball_leave_area * ball_leave_area_reward + \
                                 w_distance * dist_robot_own_goal_bar_gk
-                                
+
                     # print("-------------------")
                     # print(reward_gk)
                     # print(ball_defense_reward)
@@ -436,6 +436,7 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
                     self.reward_shaping_total['defense_gk'] += ball_defense_reward * w_defense
                     self.reward_shaping_total['ball_leave_area_gk'] += w_ball_leave_area * ball_leave_area_reward
 
+                # print(reward_gk)
                 # Attacker Reward
                 # Calculate ball potential Attacker
                 grad_ball_potential_atk = self.__ball_grad()
