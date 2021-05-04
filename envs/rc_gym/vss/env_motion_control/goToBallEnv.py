@@ -25,8 +25,6 @@ class goToBallEnv(VSSBaseEnv):
       Num     Observation                                       Min                     Max
       0       Ball X   (m)                                   -7000                   7000
       1       Ball Y   (m)                                   -6000                   6000
-      2       Ball X   (m)                                   -7000                   7000
-      3       Ball Y   (m)                                   -6000                   6000
       4       Blue id 0 Vx  (m/s)                            -10000                  10000
       5       Blue id 0 Vy  (m/s)                            -10000                  10000
       6       Blue id 0 Robot Vw       (rad/s)                -math.pi * 3            math.pi * 3
@@ -51,7 +49,7 @@ class goToBallEnv(VSSBaseEnv):
   """
   def __init__(self):
     super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
-                     time_step=0.032)
+                     time_step=0.03)
     ## Action Space
     actSpaceThresholds = np.array([1, 1], dtype=np.float32)
     self.action_space = gym.spaces.Box(low=-1, high=1,
@@ -59,7 +57,7 @@ class goToBallEnv(VSSBaseEnv):
 
 
     # Observation Space thresholds
-    obsSpaceThresholds = np.array([0.75, 0.65, 0.75, 0.65, 2, 2, math.pi * 3, 10], dtype=np.float32)
+    obsSpaceThresholds = np.array([0.75, 0.65, 2, 2, math.pi * 3, 10], dtype=np.float32)
     self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)
     self.goToballState = None
     self.distAnt = 1000
@@ -80,12 +78,12 @@ class goToBallEnv(VSSBaseEnv):
     return commands
 
   def _frame_to_observations(self):
-    observation = []
+    
 
     self.goToBallState = goToBallState()
 
     observation = self.goToBallState.getObservation(self.frame, self.path)
-
+    
     return np.array(observation)
 
   def _get_initial_positions_frame(self):
@@ -93,7 +91,8 @@ class goToBallEnv(VSSBaseEnv):
     #To CHANGE: 
     # ball penalty position
     #ball = Ball(x=random.uniform(-4, 0), y=random.uniform(-4, 4), v_x=0, v_y=0)
-    posFrame.ball.x =random.uniform(-0.5,0) 
+    posFrame.ball.x=0.0
+    #posFrame.ball.x =random.uniform(-0.5,0) 
     posFrame.ball.y=random.uniform(-0.4, 0.4)
     
 
@@ -125,6 +124,7 @@ class goToBallEnv(VSSBaseEnv):
     done = False
 
     if(self.goToBallState.distance<0.1):
+      print("aqui")
       rewardContact += 100
       self.path.pop(0)
     #print(self.state.timestamp)
@@ -155,7 +155,7 @@ class goToBallEnv(VSSBaseEnv):
     else:
       # the ball in the field limits
       if (len(self.path)==0):
-        #print("OI")
+        print("OI")
         rewardContact += 500
         done = True
       #rewardDistance += (5 / pow(2 * math.pi, 1 / 2)) * math.exp(-((self.goToBallState.distance*0.001)**2 + self.goToBallState.angle_relative**2) / 2) - 2 

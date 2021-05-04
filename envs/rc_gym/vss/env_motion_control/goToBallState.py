@@ -12,6 +12,10 @@ class goToBallState:
   """Init Frame object."""
   ball_x: float = None
   ball_y: float = None
+  target_0_x: float = None
+  target_0_y: float = None
+  target_1_x: float = None
+  target_1_y: float = None
   robot_vx: float = None
   robot_vy: float = None
   robot_w: float = None
@@ -88,8 +92,8 @@ class goToBallState:
     #print(angle_to_ball)
     return angle_to_ball
 
-  def getBallLocalCoordinates(self, frame):
-    robot_ball = [frame.robots_blue[0].x - frame.ball.x, frame.robots_blue[0].y - frame.ball.y]
+  def getBallLocalCoordinates(self, frame, target):
+    robot_ball = [frame.robots_blue[0].x - target[0], frame.robots_blue[0].y - target[1]]
     mod_to_ball = mod(robot_ball[0], robot_ball[1])
     angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - frame.robots_blue[0].theta))
     robot_ball_x = mod_to_ball* math.cos(angle_to_ball)
@@ -109,8 +113,20 @@ class goToBallState:
     
   
   def getObservation(self, frame, target_pos):
+    frame.robots_blue[0].theta = np.deg2rad(frame.robots_blue[0].theta)
+    if frame.robots_blue[0].theta > math.pi:
+      frame.robots_blue[0].theta -= 2*math.pi
+    elif frame.robots_blue[0].theta < -math.pi:
+      frame.robots_blue[0].theta += 2*math.pi
+    #frame.robots_blue[0].v_theta = np.deg2rad(frame.robots_blue[0].v_theta)
+    #print(frame.robots_blue[0].theta)
    
-    self.ball_x, self.ball_y = self.getBallLocalCoordinates(frame)
+    self.target_0_x, self.target_0_y = self.getBallLocalCoordinates(frame, target_pos[0])
+    if(len(target_pos)>1):
+      self.target_1_x, self.target_1_y = self.getBallLocalCoordinates(frame, target_pos[1])
+    else:
+      self.target_1_x, self.target_1_y = self.getBallLocalCoordinates(frame, target_pos[0])
+
     #self.ball_x, self.ball_y = target[0], target[1]
     #print(self.ball_x, self.ball_y)
     #self.ball_x, self.ball_y = frame.ball.x, frame.ball.y
@@ -133,15 +149,10 @@ class goToBallState:
     #objective_pos = self.run_planning(frame,0,True)
     #observation.append(self.ball_x) 
     #observation.append(self.ball_y)
-    observation.append(target_pos[0][0]) 
-    observation.append(target_pos[0][1])
-    if(len(target_pos)>1):
-      observation.append(target_pos[1][0]) 
-      observation.append(target_pos[1][1])
-    else:
-      observation.append(target_pos[0][0]) 
-      observation.append(target_pos[0][1])
-      
+    observation.append(self.target_0_x)
+    observation.append(self.target_0_y)
+    #observation.append(self.target_1_x)
+    #observation.append(self.target_1_y)
     observation.append(self.robot_vx) 
     observation.append(self.robot_vy) 
     observation.append(self.robot_w)
@@ -159,8 +170,8 @@ class goToBallState:
 
   def generatePath(self, frame):
     objective_pos = self.run_planning(frame,0,True)
-    for i in range(len(objective_pos)):
-      objective_pos[i] = self.getBallLocalCoordinates(frame)
+    #for i in range(len(objective_pos)):
+    #  objective_pos[i] = self.getBallLocalCoordinates(frame)
     return objective_pos
 
 

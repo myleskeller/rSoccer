@@ -55,6 +55,7 @@ class RCGymRender:
         self.n_robots_yellow = n_robots_yellow
         self.field = field_params
         self.ball: rendering.Transform = None
+        self.path: List[rendering.Transform] = []
         self.blue_robots: List[rendering.Transform] = []
         self.yellow_robots: List[rendering.Transform] = []
 
