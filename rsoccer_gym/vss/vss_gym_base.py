@@ -85,7 +85,7 @@ class VSSBaseEnv(gym.Env):
         # Get frame from simulator
         self.frame = self.rsim.get_frame()
 
-        return self._frame_to_observations()
+        #return self._frame_to_observations()
 
     def render(self, mode='human') -> None:
         '''

@@ -51,6 +51,7 @@ class Fira(RSim):
         self.robot_wheel_radius = 0.026
 
     def get_field_params(self):
+        #print("aqui")
         return {'field_width': 1.3, 'field_length': 1.5,
                 'penalty_width': 0.7, 'penalty_length': 0.15,
                 'goal_width': 0.4, 'goal_depth': 0.1}
@@ -78,6 +79,7 @@ class Fira(RSim):
             rep_rob.turnon = True
 
         for i, robot in enumerate(placement_pos["yellow_robots_pos"]):
+            #print(robot[0], robot[1])
             rep_rob = robots_pkt.add()
             rep_rob.position.robot_id = i+1
             rep_rob.position.x = robot[0]
@@ -86,6 +88,7 @@ class Fira(RSim):
             rep_rob.yellowteam = True
             rep_rob.turnon = True
 
+        #print(pkt)
         # send commands
         data = pkt.SerializeToString()
         self.com_socket.sendto(data, self.com_address)

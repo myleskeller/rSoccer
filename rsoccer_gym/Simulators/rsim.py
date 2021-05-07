@@ -32,6 +32,7 @@ class RSim:
             time_step_ms=time_step_ms
         )
         self.field = self.get_field_params()
+        
 
     def reset(self, frame: Frame):
         placement_pos = self._placement_dict_from_frame(frame)

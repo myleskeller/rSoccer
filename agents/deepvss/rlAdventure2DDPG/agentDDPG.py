@@ -1,6 +1,7 @@
 import gym
 import sys
-import rc_gym
+sys.path.append("../../..")
+import rsoccer_gym
 import numpy as np
 import os
 
@@ -23,7 +24,7 @@ class AgentDDPG:
 
     def __init__(self, name='DDPG',
                  maxEpisodes=60000, maxSteps=250, batchSize=256, replayBufferSize=100000, valueLR=1e-3, policyLR=1e-4,
-                 hiddenDim=256, nEpisodesPerCheckpoint=5000):
+                 hiddenDim=256, nEpisodesPerCheckpoint=1000):
         # Training Parameters
         self.batchSize = batchSize
         self.maxSteps = maxSteps
@@ -36,7 +37,7 @@ class AgentDDPG:
         print('Cuda Activated? ', torch.cuda.is_available())
             
         # Create Environment using a wrapper which scales actions and observations to [-1, 1]
-        self.env = NormalizedWrapper(gym.make("VSSMotionControl-v0"))
+        self.env = NormalizedWrapper(gym.make("VSSMotionTuning-v0"))
 
         # Init action noise object
         self.ouNoise = OUNoise(self.env.action_space)

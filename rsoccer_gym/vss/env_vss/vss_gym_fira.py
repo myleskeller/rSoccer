@@ -268,7 +268,7 @@ class VSSFIRAEnv(VSSBaseFIRAEnv):
     def _get_initial_positions_frame(self):
         '''Returns the position of each robot and ball for the inicial frame'''
         field_half_length = self.field_params['field_length'] / 2
-        field_half_width = self.field_params['field_width'] / 2
+        field_half_width = self.field_params['width'] / 2
 
         def x(): return random.uniform(-field_half_length + 0.1,
                                        field_half_length - 0.1)

@@ -5,6 +5,11 @@ register(id='VSS-v0',
          max_episode_steps=1200
          )
 
+register(id='VSSMotionTuning-v0',
+         entry_point='rsoccer_gym.vss.env_motion_tuning:VSSMotionTuningEnv',
+         max_episode_steps=250
+         )
+
 register(id='VSSMA-v0',
          entry_point='rsoccer_gym.vss.env_ma:VSSMAEnv',
          max_episode_steps=1200
