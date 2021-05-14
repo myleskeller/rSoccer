@@ -73,13 +73,15 @@ class VSSMotionTuningEnv(VSSBaseEnv):
 
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(2, ), dtype=np.float32)
-        obsSpaceThresholds = np.array([0.75, 0.65, 2, 2, math.pi * 3, 10], dtype=np.float32)
-        self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds)
+        obsSpaceThresholds = np.array([0.75, 0.65, 0.75, 0.65, 2, 2, math.pi * 3, 10], dtype=np.float32)
+        self.observation_space = gym.spaces.Box(low=-obsSpaceThresholds, high=obsSpaceThresholds,
+                                                dtype=np.float32)
         # Initialize Class Atributes
         self.previous_ball_potential = None
         self.actions: Dict = None
         self.reward_shaping_total = None
         self.v_wheel_deadzone = 0.05
+        print(self.observation_space.shape)
 
         self.ou_actions = []
         for i in range(self.n_robots_blue + self.n_robots_yellow):
@@ -115,8 +117,8 @@ class VSSMotionTuningEnv(VSSBaseEnv):
     def _frame_to_observations(self):
 
         observation = []
-        if(len(self.path)<1):
-          observation = self.goToballState.getObservation(self.frame, [(self.frame.ball.x, self.frame.ball.y)])
+        if(len(self.path)<2):
+          observation = self.goToballState.getObservation(self.frame, [(self.frame.ball.x, self.frame.ball.y), (self.frame.ball.x, self.frame.ball.y)])
         else:
           observation = self.goToballState.getObservation(self.frame, self.path)
     

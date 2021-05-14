@@ -111,6 +111,7 @@ class goToBallState:
   
   def getObservation(self, frame, path):
     self.ball_x, self.ball_y = self.getBallLocalCoordinates(frame, path[0])
+    self.ball_1_x, self.ball_1_y = self.getBallLocalCoordinates(frame, path[1])
     #self.ball_x, self.ball_y = target[0], target[1]
     #print(self.ball_x, self.ball_y)
     #self.ball_x, self.ball_y = frame.ball.x, frame.ball.y
@@ -132,7 +133,9 @@ class goToBallState:
     observation = []
 
     observation.append(self.ball_x) 
-    observation.append(self.ball_y) 
+    observation.append(self.ball_y)
+    observation.append(self.ball_1_x)
+    observation.append(self.ball_1_y)
     observation.append(self.robot_vx) 
     observation.append(self.robot_vy) 
     observation.append(self.robot_w)
