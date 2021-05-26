@@ -84,14 +84,14 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
     atk_target_y = 0
 
     def __init__(self):
-        super().__init__(field_type=0, n_robots_blue=3, n_robots_yellow=3,
+        super().__init__(field_type=0, n_robots_blue=1, n_robots_yellow=1,
                          time_step=0.025)
 
         self.action_space = gym.spaces.Box(low=-1, high=1,
                                            shape=(2, ), dtype=np.float32)
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
-                                                shape=(40,), dtype=np.float32)
+                                                shape=(16,), dtype=np.float32)
 
         # Initialize Class Atributes
         self.previous_ball_potential = None
@@ -363,7 +363,7 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
         w_move = 0.2
         w_ball_pot = 0.1
         w_move_y  = 0.3
-        w_distance = 0.01
+        w_distance = 0.05
         w_ball_leave_area = 2.0
         reward_gk = 0
 
@@ -394,14 +394,8 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
             reward_atk = -10
             reward_gk = 0
             goal = True
-        
-        # This case the Goalkeeper leaves the gk area
-        elif self.frame.robots_blue[0].x > -0.63 or self.frame.robots_blue[0].y > 0.4 \
-            or self.frame.robots_blue[0].y < -0.4:  
-            reward_gk = -10
-            reward_atk = 0
-            done = True
         else:
+
             if self.last_frame is not None:
                 # Goalkeeper reward
                 # If the ball entered in the gk area
@@ -415,29 +409,33 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
                     ball_leave_area_reward = 1 
                     self.ballInsideArea = False
 
-                # else:
-                # Goalkeeper Reward
-                move_y_reward_gk = self.__move_reward_y()
-                ball_defense_reward = self.__defended_ball() 
-                dist_robot_own_goal_bar_gk = -self.field.length / \
-                    2 + 0.15 - self.frame.robots_blue[0].x
+                # This case the Goalkeeper leaves the gk area
+                if self.frame.robots_blue[0].x > -0.63 or self.frame.robots_blue[0].y > 0.4 \
+                    or self.frame.robots_blue[0].y < -0.4:  
+                    reward_gk = -0.1
 
-                reward_gk = w_move_y * move_y_reward_gk + \
-                            w_defense * ball_defense_reward + \
-                            w_ball_leave_area * ball_leave_area_reward
-                            # w_distance * dist_robot_own_goal_bar_gk
+                else:
+                    # Goalkeeper Reward
+                    move_y_reward_gk = self.__move_reward_y()
+                    ball_defense_reward = self.__defended_ball() 
+                    dist_robot_own_goal_bar_gk = -self.field.length / \
+                        2 + 0.15 - self.frame.robots_blue[0].x
 
-                # print("-------------------")
-                # print(reward_gk)
-                # print(ball_defense_reward)
-                # print(ball_leave_area_reward)
+                    reward_gk = w_move_y * move_y_reward_gk + \
+                                w_defense * ball_defense_reward + \
+                                w_ball_leave_area * ball_leave_area_reward
+                                # w_distance * dist_robot_own_goal_bar_gk + \
+                                
+                    # print("-------------------")
+                    # print(reward_gk)
+                    # print(ball_defense_reward)
+                    # print(ball_leave_area_reward)
 
-                self.reward_shaping_total['move_y_gk'] += w_move_y * move_y_reward_gk
-                self.reward_shaping_total['distance_own_goal_bar_gk'] += w_distance * dist_robot_own_goal_bar_gk
-                self.reward_shaping_total['defense_gk'] += ball_defense_reward * w_defense
-                self.reward_shaping_total['ball_leave_area_gk'] += w_ball_leave_area * ball_leave_area_reward
+                    self.reward_shaping_total['move_y_gk'] += w_move_y * move_y_reward_gk
+                    self.reward_shaping_total['distance_own_goal_bar_gk'] += w_distance * dist_robot_own_goal_bar_gk
+                    self.reward_shaping_total['defense_gk'] += ball_defense_reward * w_defense
+                    self.reward_shaping_total['ball_leave_area_gk'] += w_ball_leave_area * ball_leave_area_reward
 
-                # print(reward_gk)
                 # Attacker Reward
                 # Calculate ball potential Attacker
                 grad_ball_potential_atk = self.__ball_grad()
@@ -530,8 +528,8 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
     def __energy_penalty(self):
         '''Calculates the energy penalty'''
 
-        en_penalty_1 = abs(self.sent_commands[3].v_wheel0)
-        en_penalty_2 = abs(self.sent_commands[3].v_wheel1)
+        en_penalty_1 = abs(self.sent_commands[1].v_wheel0)
+        en_penalty_2 = abs(self.sent_commands[1].v_wheel1)
         energy_penalty = - (en_penalty_1 + en_penalty_2)
         energy_penalty /= self.field.rbt_wheel_radius
         return energy_penalty
