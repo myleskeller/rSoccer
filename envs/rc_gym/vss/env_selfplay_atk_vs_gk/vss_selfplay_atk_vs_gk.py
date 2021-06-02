@@ -412,7 +412,7 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
                 # This case the Goalkeeper leaves the gk area
                 if self.frame.robots_blue[0].x > -0.63 or self.frame.robots_blue[0].y > 0.4 \
                     or self.frame.robots_blue[0].y < -0.4:  
-                    reward_gk = -0.1
+                    reward_gk = -0.2
 
                 else:
                     # Goalkeeper Reward
