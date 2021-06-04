@@ -365,6 +365,7 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
         w_move_y  = 0.3
         w_distance = 0.05
         w_ball_leave_area = 2.0
+        w_penalty_leave_area = 0.05
         reward_gk = 0
 
         # w attacker
@@ -411,9 +412,12 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
 
                 # This case the Goalkeeper leaves the gk area
                 if self.frame.robots_blue[0].x > -0.63 or self.frame.robots_blue[0].y > 0.4 \
-                    or self.frame.robots_blue[0].y < -0.4:  
-                    reward_gk = -0.2
+                    or self.frame.robots_blue[0].y < -0.4:
+                    # reward_gk = -w_penalty_leave_area*np.linalg.norm(np.array((self.frame.robots_blue[0].x, self.frame.robots_blue[0].y)) -
+                    #                             np.array((-0.65, 0.)))
 
+                    reward_gk =  -w_penalty_leave_area*np.linalg.norm(np.array(-self.field.length/2 + 0.15) -
+                                                  np.array(self.frame.robots_blue[0].x))
                 else:
                     # Goalkeeper Reward
                     move_y_reward_gk = self.__move_reward_y()
@@ -486,14 +490,11 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
         pos_frame.ball.v_x = 0.
         pos_frame.ball.v_y = 0.
 
-        x_gk = random.uniform(-field_half_length + 0.05,
-                               pos_frame.ball.x)
-        y_gk = y()
-        pos_frame.robots_blue[0] = Robot(x=x_gk,
-                                         y=y_gk,
+        pos_frame.robots_blue[0] = Robot(x=-field_half_length + 0.05,
+                                         y=0.0,
                                          theta=0)
         agents = []
-        agents.append(Robot(x=x_gk, y=y_gk, theta=0))
+        agents.append(Robot(x=-field_half_length + 0.05, y=0.0, theta=0))
 
         for i in range(1, self.n_robots_blue):
             pos_frame.robots_blue[i] = Robot(x=x(), y=y(), theta=theta())
