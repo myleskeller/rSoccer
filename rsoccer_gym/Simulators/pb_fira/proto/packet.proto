@@ -1,14 +1,16 @@
 syntax = "proto3";
 
-import "command_fira.proto";
+import "command.proto";
 import "replacement.proto";
 import "common.proto";
+import "randomization.proto";
 
 package fira_message.sim_to_ref;
 
 message Packet {
 	Commands    cmd     = 1;
 	Replacement replace = 2;
+	Randomization rand  = 3;
 }
 
 message Environment {

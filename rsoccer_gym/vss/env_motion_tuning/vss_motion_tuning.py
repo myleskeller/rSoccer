@@ -6,7 +6,7 @@ from typing import Dict
 import gym
 import numpy as np
 from rsoccer_gym.Entities import Frame, Robot, Ball
-from rsoccer_gym.vss.vss_gym_base import VSSBaseEnv
+from rsoccer_gym.vss.vss_gym_base import VSSBaseFIRAEnv
 from rsoccer_gym.Utils import KDTree
 
 from rsoccer_gym.vss.env_motion_tuning.univectorPosture import UnivectorPosture
@@ -25,7 +25,7 @@ def distance(pointA, pointB):
     return distance
 
 
-class VSSMotionTuningEnv(VSSBaseEnv):
+class VSSMotionTuningEnv(VSSBaseFIRAEnv):
     """This environment controls a single robot in a VSS soccer League 3v3 match 
 
 
@@ -95,12 +95,18 @@ class VSSMotionTuningEnv(VSSBaseEnv):
         self.timestampAnt = 0
         self.target = None
 
+        self.v_max = None
+        self.v_max_min = 0.7
+        self.v_max_max = 1.1
+
         print('Environment initialized')
 
     def reset(self):
         self.actions = None
         self.reward_shaping_total = None
         self.previous_ball_potential = None
+        self.randomize()
+        #print(self.rand_params)
         for ou in self.ou_actions:
             ou.reset()
         for i in range(10):
@@ -108,6 +114,12 @@ class VSSMotionTuningEnv(VSSBaseEnv):
         self.path = self._run_planning(self.frame, 0, False)
         self.goToballState=goToBallState()
         return self._frame_to_observations()
+    
+    def randomize(self):
+        v_max = np.random.uniform(self.v_max_min, self.v_max_max)
+        self.rand_params = []
+        self.rand_params.append(v_max)
+
 
     def step(self, action):
         #observation, reward, done, _ = super().step(action)
@@ -163,12 +175,12 @@ class VSSMotionTuningEnv(VSSBaseEnv):
     def _get_commands(self, actions):
         commands = []
         self.actions = {}
-
+        #print(actions)
         self.actions[0] = actions
         v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
         commands.append(Robot(yellow=False, id=0, v_wheel0=v_wheel0,
                               v_wheel1=v_wheel1))
-
+        
         # Send random commands to the other robots
         for i in range(1, self.n_robots_blue):
             actions = (0,0)
@@ -181,7 +193,7 @@ class VSSMotionTuningEnv(VSSBaseEnv):
             v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
             commands.append(Robot(yellow=True, id=i, v_wheel0=v_wheel0,
                                   v_wheel1=v_wheel1))
-
+        #print(commands)
         return commands
 
     def _calculate_reward_and_done(self):
@@ -262,13 +274,14 @@ class VSSMotionTuningEnv(VSSBaseEnv):
         return pos_frame
 
     def _actions_to_v_wheels(self, actions):
+        #print("max_v", self.max_v)
         left_wheel_speed = actions[0] * self.max_v
         right_wheel_speed = actions[1] * self.max_v
 
         left_wheel_speed, right_wheel_speed = np.clip(
             (left_wheel_speed, right_wheel_speed), -self.max_v, self.max_v
         )
-
+        #print("left ", left_wheel_speed, self.field.rbt_wheel_radius)
         # Deadzone
         if -self.v_wheel_deadzone < left_wheel_speed < self.v_wheel_deadzone:
             left_wheel_speed = 0

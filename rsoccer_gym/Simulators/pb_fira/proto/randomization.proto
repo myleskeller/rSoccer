@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package fira_message.sim_to_ref;
+
+import "common.proto";
+
+message Randomization {
+	double torque      = 1;
+  double friction    = 2;
+  double visionNoise = 3;
+}
+

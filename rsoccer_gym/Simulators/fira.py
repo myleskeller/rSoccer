@@ -48,7 +48,7 @@ class Fira(RSim):
         )
         self.vision_sock.bind((self.vision_ip, self.vision_port))
         self.linear_speed_range = 1.15
-        self.robot_wheel_radius = 0.026
+        self.robot_wheel_radius = 0.026*100
 
     def get_field_params(self):
         #print("aqui")
@@ -59,7 +59,8 @@ class Fira(RSim):
     def stop(self):
         pass
 
-    def reset(self, frame: FramePB):
+    def reset(self, frame: FramePB, rand_params):
+        #print(rand_params)
         placement_pos = self._placement_dict_from_frame(frame)
         pkt = packet_pb2.Packet()
 
@@ -71,7 +72,7 @@ class Fira(RSim):
         robots_pkt = pkt.replace.robots
         for i, robot in enumerate(placement_pos["blue_robots_pos"]):
             rep_rob = robots_pkt.add()
-            rep_rob.position.robot_id = i+1
+            rep_rob.position.robot_id = i
             rep_rob.position.x = robot[0]
             rep_rob.position.y = robot[1]
             rep_rob.position.orientation = robot[2]
@@ -81,12 +82,16 @@ class Fira(RSim):
         for i, robot in enumerate(placement_pos["yellow_robots_pos"]):
             #print(robot[0], robot[1])
             rep_rob = robots_pkt.add()
-            rep_rob.position.robot_id = i+1
+            rep_rob.position.robot_id = i
             rep_rob.position.x = robot[0]
             rep_rob.position.y = robot[1]
             rep_rob.position.orientation = robot[2]
             rep_rob.yellowteam = True
             rep_rob.turnon = True
+        
+        pkt.rand.torque = rand_params[0] 
+
+        #print(pkt)
 
         #print(pkt)
         # send commands
@@ -113,8 +118,10 @@ class Fira(RSim):
             robot.yellowteam = cmd.yellow
 
             # convert from linear speed to angular speed
-            robot.wheel_left = cmd.v_wheel1 / self.robot_wheel_radius
-            robot.wheel_right = cmd.v_wheel2 / self.robot_wheel_radius
+            robot.wheel_left = cmd.v_wheel0# / self.robot_wheel_radius
+            robot.wheel_right = cmd.v_wheel1# / self.robot_wheel_radius
+
+            #print(robot.wheel_right)
 
         # send commands
         data = pkt.SerializeToString()

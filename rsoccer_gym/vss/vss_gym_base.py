@@ -49,6 +49,7 @@ class VSSBaseEnv(gym.Env):
         self.view = None
         self.steps = 0
         self.sent_commands = None
+        self.rand_params = []
 
     def step(self, action):
         self.steps += 1
@@ -56,6 +57,7 @@ class VSSBaseEnv(gym.Env):
         commands: List[Robot] = self._get_commands(action)
         #print(commands)
         # Send command to simulator
+        #print(commands)
         self.rsim.send_commands(commands)
         self.sent_commands = commands
         #print("aqui")
@@ -80,7 +82,7 @@ class VSSBaseEnv(gym.Env):
         self.view = None
 
         initial_pos_frame: Frame = self._get_initial_positions_frame()
-        self.rsim.reset(initial_pos_frame)
+        self.rsim.reset(initial_pos_frame, self.rand_params)
 
         # Get frame from simulator
         self.frame = self.rsim.get_frame()
