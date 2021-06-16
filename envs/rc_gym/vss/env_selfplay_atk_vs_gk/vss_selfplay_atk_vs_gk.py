@@ -265,9 +265,9 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
         Cosine between the robot vel_Y vector and the vector robot_Y -> ball_Y.
         This indicates rather the robot is moving towards the ball_Y or not.
         '''
-        ball = np.array([np.clip(self.frame.ball.y, -0.35, 0.35)])
-        robot = np.array([self.frame.robots_blue[0].y])
-        robot_vel = np.array([self.frame.robots_blue[0].v_y])
+        ball = np.array([0., np.clip(self.frame.ball.y, -0.35, 0.35)])
+        robot = np.array([0., self.frame.robots_blue[0].y])
+        robot_vel = np.array([self.frame.robots_blue[0].v_x, self.frame.robots_blue[0].v_y])
         robot_ball = ball - robot
         robot_ball = robot_ball/np.linalg.norm(robot_ball)
 
@@ -387,7 +387,7 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
             self.reward_shaping_total['goal_score'] += 1
             self.reward_shaping_total['goals_yellow'] += 1
             reward_atk = 10
-            reward_gk = -10
+            reward_gk = -10*2
             goal = True
         elif self.frame.ball.x > (self.field.length / 2):
             self.reward_shaping_total['goal_score'] -= 1
@@ -412,14 +412,9 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
 
                 # This case the Goalkeeper leaves the gk area
                 if self.frame.robots_blue[0].x > -0.6 or self.frame.robots_blue[0].y > 0.4 \
-                    or self.frame.robots_blue[0].y < -0.4:
-                    # reward_gk = -w_penalty_leave_area*np.linalg.norm(np.array((self.frame.robots_blue[0].x, self.frame.robots_blue[0].y)) -
-                    #                             np.array((-0.65, 0.)))
-
-                    reward_gk =  -w_penalty_leave_area*np.linalg.norm(np.array(-self.field.length/2 + 0.15) -
-                                                  np.array(self.frame.robots_blue[0].x))
-                    # print(reward_gk)
-                    # print(self.frame.robots_blue[0].x)
+                    or self.frame.robots_blue[0].y < -0.4:  
+                    reward_gk = -0.3
+                    self.ballIsInsideZone = False
                 else:
                     # Goalkeeper Reward
                     move_y_reward_gk = self.__move_reward_y()
