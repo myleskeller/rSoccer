@@ -265,9 +265,9 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
         Cosine between the robot vel_Y vector and the vector robot_Y -> ball_Y.
         This indicates rather the robot is moving towards the ball_Y or not.
         '''
-        ball = np.array([np.clip(self.frame.ball.y, -0.35, 0.35)])
-        robot = np.array([self.frame.robots_blue[0].y])
-        robot_vel = np.array([self.frame.robots_blue[0].v_y])
+        ball = np.array([0., np.clip(self.frame.ball.y, -0.35, 0.35)])
+        robot = np.array([0., self.frame.robots_blue[0].y])
+        robot_vel = np.array([self.frame.robots_blue[0].v_x, self.frame.robots_blue[0].v_y])
         robot_ball = ball - robot
         robot_ball = robot_ball/np.linalg.norm(robot_ball)
 
@@ -386,7 +386,7 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
             self.reward_shaping_total['goal_score'] += 1
             self.reward_shaping_total['goals_yellow'] += 1
             reward_atk = 10
-            reward_gk = -10
+            reward_gk = -10*2
             goal = True
         elif self.frame.ball.x > (self.field.length / 2):
             self.reward_shaping_total['goal_score'] -= 1
@@ -412,8 +412,8 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
                 # This case the Goalkeeper leaves the gk area
                 if self.frame.robots_blue[0].x > -0.63 or self.frame.robots_blue[0].y > 0.4 \
                     or self.frame.robots_blue[0].y < -0.4:  
-                    reward_gk = -0.2
-
+                    reward_gk = -0.3
+                    self.ballIsInsideZone = False
                 else:
                     # Goalkeeper Reward
                     move_y_reward_gk = self.__move_reward_y()
@@ -486,14 +486,11 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
         pos_frame.ball.v_x = 0.
         pos_frame.ball.v_y = 0.
 
-        x_gk = random.uniform(-field_half_length + 0.05,
-                               pos_frame.ball.x)
-        y_gk = y()
-        pos_frame.robots_blue[0] = Robot(x=x_gk,
-                                         y=y_gk,
+        pos_frame.robots_blue[0] = Robot(x=-field_half_length + 0.05,
+                                         y=0.0,
                                          theta=0)
         agents = []
-        agents.append(Robot(x=x_gk, y=y_gk, theta=0))
+        agents.append(Robot(x=-field_half_length + 0.05, y=0.0, theta=0))
 
         for i in range(1, self.n_robots_blue):
             pos_frame.robots_blue[i] = Robot(x=x(), y=y(), theta=theta())
