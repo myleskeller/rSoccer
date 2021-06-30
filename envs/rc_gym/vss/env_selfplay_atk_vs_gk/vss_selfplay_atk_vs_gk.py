@@ -408,9 +408,9 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
                 # If the ball entered in the gk area and leaves it
                 if self.ballInsideArea and (self.frame.ball.x > -0.6 or self.frame.ball.y > 0.35 \
                     or self.frame.ball.y < -0.35):
-                    ball_leave_area_reward = 1 
+                    ball_leave_area_reward = 1
                     self.ballInsideArea = False
-
+                    
                 # This case the Goalkeeper leaves the gk area
                 if self.frame.robots_blue[0].x > -0.63 or self.frame.robots_blue[0].y > 0.4 \
                     or self.frame.robots_blue[0].y < -0.4:
