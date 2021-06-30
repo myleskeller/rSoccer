@@ -197,7 +197,9 @@ def play(params, net, device, exp_queue, agent_env, test, writer, collected_samp
                 writer.add_scalar("rw/ball_leave_area_gk",
                                   info['ball_leave_area_gk'],
                                   matches_played)
-                
+                writer.add_scalar("rw/gk_leave_area",
+                                  info['gk_leave_area'],
+                                  matches_played)
 
                 print(f'<======Match {matches_played}======>')
                 print(f'-------Reward Attacker:', epi_reward_atk)
