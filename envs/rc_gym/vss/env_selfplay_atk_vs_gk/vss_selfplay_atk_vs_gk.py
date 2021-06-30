@@ -365,7 +365,7 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
         w_move_y  = 0.3
         w_distance = 0.05
         w_ball_leave_area = 2.0
-        w_penalty_leave_area = 0.1
+        w_penalty_leave_area = 0.5
         reward_gk = 0
 
         # w attacker
@@ -411,10 +411,13 @@ class VSSSelfplayAtkGk(VSSBaseEnv):
                     self.ballInsideArea = False
 
                 # This case the Goalkeeper leaves the gk area
-                if self.frame.robots_blue[0].x > -0.6 or self.frame.robots_blue[0].y > 0.4 \
-                    or self.frame.robots_blue[0].y < -0.4:  
-                    reward_gk = -0.3
-                    self.ballIsInsideZone = False
+                if self.frame.robots_blue[0].x > -0.63 or self.frame.robots_blue[0].y > 0.4 \
+                    or self.frame.robots_blue[0].y < -0.4:
+                    # reward_gk = -w_penalty_leave_area*np.linalg.norm(np.array((self.frame.robots_blue[0].x, self.frame.robots_blue[0].y)) -
+                    #                             np.array((-0.65, 0.)))
+                    a = np.array([-self.field.length/2. + 0.15, 0.])
+                    b = np.array([self.frame.robots_blue[0].x, self.frame.robots_blue[0].y])
+                    reward_gk = -w_penalty_leave_area*np.linalg.norm(a - b)
                 else:
                     # Goalkeeper Reward
                     move_y_reward_gk = self.__move_reward_y()
