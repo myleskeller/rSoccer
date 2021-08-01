@@ -8,7 +8,8 @@ env = gym.make('VSSMotionTuning-v0')
 while True:#for i in range(10):
     env.reset()
     done = False
-    while True:#not done:
+    print("reset")
+    while not done:
         # Step using random actions
         action = [0.0, 0.0]#env.action_space.sample()
         next_state, reward, done, info = env.step(action)

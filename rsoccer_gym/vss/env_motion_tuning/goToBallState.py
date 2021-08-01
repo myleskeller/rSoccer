@@ -30,7 +30,7 @@ class goToBallState:
 
   def getDistance(self, frame, target) -> float:
     #print(float(mod(abs(frame.robots_blue[0].x-frame.ball.x), abs(frame.robots_blue[0].y-frame.ball.y))))
-    return float(mod(abs(frame.robots_blue[0].x-target[0]), abs(frame.robots_blue[0].y-target[1])))
+    return float(Utils.mod(abs(frame.robots_blue[0].x-target[0]), abs(frame.robots_blue[0].y-target[1])))
 
   #def getTopPosition(self, frame):
   #  diff_y = TOP_FIELD - frame.robots_blue[0].y
@@ -85,14 +85,14 @@ class goToBallState:
     #print(angle_relative)
     #
     robot_ball = [frame.robots_blue[0].x - target[0], frame.robots_blue[0].y - target[1]]
-    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - np.deg2rad(frame.robots_blue[0].theta)))
+    angle_to_ball = Utils.toPiRange(Utils.angle(robot_ball[0], robot_ball[1]) + (math.pi - np.deg2rad(frame.robots_blue[0].theta)))
     #print(angle_to_ball)
     return angle_to_ball
 
   def getBallLocalCoordinates(self, frame, target):
     robot_ball = [frame.robots_blue[0].x - target[0], frame.robots_blue[0].y - target[1]]
-    mod_to_ball = mod(robot_ball[0], robot_ball[1])
-    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - np.deg2rad(frame.robots_blue[0].theta)))
+    mod_to_ball = Utils.mod(robot_ball[0], robot_ball[1])
+    angle_to_ball = Utils.toPiRange(Utils.angle(robot_ball[0], robot_ball[1]) + (math.pi - np.deg2rad(frame.robots_blue[0].theta)))
     robot_ball_x = mod_to_ball* math.cos(angle_to_ball)
     robot_ball_y = mod_to_ball* math.sin(angle_to_ball)
     #print(robot_ball_x, robot_ball_y)
@@ -100,8 +100,8 @@ class goToBallState:
   
   def getBallLocalSpeed(self, frame, target):
     robot_ball = [frame.robots_blue[0].v_x - frame.ball.v_x, frame.robots_blue[0].v_y - frame.ball.v_y]
-    mod_to_ball = mod(robot_ball[0], robot_ball[1])
-    angle_to_ball = toPiRange(angle(robot_ball[0], robot_ball[1]) + (math.pi - np.deg2rad(frame.robots_blue[0].theta)))
+    mod_to_ball = Utils.mod(robot_ball[0], robot_ball[1])
+    angle_to_ball = Utils.toPiRange(Utils.angle(robot_ball[0], robot_ball[1]) + (math.pi - np.deg2rad(frame.robots_blue[0].theta)))
     robot_ball_vx = mod_to_ball* math.cos(angle_to_ball)
     robot_ball_vy = mod_to_ball* math.sin(angle_to_ball)
     return robot_ball_vx, robot_ball_vy

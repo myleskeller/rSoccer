@@ -7,6 +7,8 @@ import "common.proto";
 message Randomization {
 	double torque      = 1;
   double friction    = 2;
-  double visionNoise = 3;
+  double visionNoiseX = 3;
+  double visionNoiseY = 4;
+  double visionNoiseTheta = 5;
 }
 

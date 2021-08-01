@@ -95,9 +95,14 @@ class VSSMotionTuningEnv(VSSBaseFIRAEnv):
         self.timestampAnt = 0
         self.target = None
 
-        self.v_max = None
         self.v_max_min = 0.7
         self.v_max_max = 1.1
+        self.vision_noise_avg = 0.7
+        self.vision_noise_std = 0.5
+
+        self.vision_noise_ang_avg = 4.0
+        self.vision_noise_ang_std = 4.0
+
 
         print('Environment initialized')
 
@@ -116,9 +121,18 @@ class VSSMotionTuningEnv(VSSBaseFIRAEnv):
         return self._frame_to_observations()
     
     def randomize(self):
+        #f = open("log_vision_noise.txt", "a")
         v_max = np.random.uniform(self.v_max_min, self.v_max_max)
+        vision_noise_x = np.random.normal(self.vision_noise_avg, self.vision_noise_std)*0.01*random.choice([1, -1])
+        vision_noise_y = np.random.normal(self.vision_noise_avg, self.vision_noise_std)*0.01*random.choice([1, -1])
+        vision_noise_theta = np.random.normal(self.vision_noise_ang_avg, self.vision_noise_ang_std)*random.choice([1, -1])
+        #f.write(str(vision_noise_x)+", "+str(vision_noise_y)+", "+str(vision_noise_theta)+"\n")
+        #f.close()
         self.rand_params = []
         self.rand_params.append(v_max)
+        self.rand_params.append(vision_noise_x)
+        self.rand_params.append(vision_noise_y)
+        self.rand_params.append(vision_noise_theta)
 
 
     def step(self, action):

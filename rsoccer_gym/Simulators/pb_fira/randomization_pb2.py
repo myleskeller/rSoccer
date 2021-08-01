@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='randomization.proto',
   package='fira_message.sim_to_ref',
   syntax='proto3',
-  serialized_pb=_b('\n\x13randomization.proto\x12\x17\x66ira_message.sim_to_ref\x1a\x0c\x63ommon.proto\"F\n\rRandomization\x12\x0e\n\x06torque\x18\x01 \x01(\x01\x12\x10\n\x08\x66riction\x18\x02 \x01(\x01\x12\x13\n\x0bvisionNoise\x18\x03 \x01(\x01\x62\x06proto3')
+  serialized_pb=_b('\n\x13randomization.proto\x12\x17\x66ira_message.sim_to_ref\x1a\x0c\x63ommon.proto\"w\n\rRandomization\x12\x0e\n\x06torque\x18\x01 \x01(\x01\x12\x10\n\x08\x66riction\x18\x02 \x01(\x01\x12\x14\n\x0cvisionNoiseX\x18\x03 \x01(\x01\x12\x14\n\x0cvisionNoiseY\x18\x04 \x01(\x01\x12\x18\n\x10visionNoiseTheta\x18\x05 \x01(\x01\x62\x06proto3')
   ,
   dependencies=[common__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -50,8 +50,22 @@ _RANDOMIZATION = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='visionNoise', full_name='fira_message.sim_to_ref.Randomization.visionNoise', index=2,
+      name='visionNoiseX', full_name='fira_message.sim_to_ref.Randomization.visionNoiseX', index=2,
       number=3, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='visionNoiseY', full_name='fira_message.sim_to_ref.Randomization.visionNoiseY', index=3,
+      number=4, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='visionNoiseTheta', full_name='fira_message.sim_to_ref.Randomization.visionNoiseTheta', index=4,
+      number=5, type=1, cpp_type=5, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -69,7 +83,7 @@ _RANDOMIZATION = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=62,
-  serialized_end=132,
+  serialized_end=181,
 )
 
 DESCRIPTOR.message_types_by_name['Randomization'] = _RANDOMIZATION

@@ -89,7 +89,10 @@ class Fira(RSim):
             rep_rob.yellowteam = True
             rep_rob.turnon = True
         
-        pkt.rand.torque = rand_params[0] 
+        pkt.rand.torque = rand_params[0]
+        pkt.rand.visionNoiseX = rand_params[1]
+        pkt.rand.visionNoiseY = rand_params[2]
+        pkt.rand.visionNoiseTheta = rand_params[3]
 
         #print(pkt)
 

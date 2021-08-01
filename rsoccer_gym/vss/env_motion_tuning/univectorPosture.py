@@ -1,6 +1,9 @@
 import math
-import rsoccer_gym.vss.env_motion_tuning.utils as utils
-import rsoccer_gym.vss.env_motion_tuning.Field as Field
+#import rsoccer_gym.ssl.ssl_go_to_ball.ssl_gym_go_to_ball
+#import rsoccer_gym.vss.env_motion_tuning.utils as utils
+from rsoccer_gym.vss.env_motion_tuning.utils import Utils as utils
+from rsoccer_gym.vss.env_motion_tuning.Field import Field
+#import rsoccer_gym.vss.env_motion_tuning.Field as Field
 class UnivectorPosture:
     def __init__(self):
         self.path=[]
