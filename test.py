@@ -11,7 +11,7 @@ while True:#for i in range(10):
     print("reset")
     while not done:
         # Step using random actions
-        action = [0.0, 0.0]#env.action_space.sample()
+        action = [0.5, 0.5]#env.action_space.sample()
         next_state, reward, done, info = env.step(action)
         #print(next_state)
         #env.render()

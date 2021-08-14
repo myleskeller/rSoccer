@@ -58,7 +58,7 @@ class VSSBaseEnv(gym.Env):
         #print(commands)
         # Send command to simulator
         #print(commands)
-        self.rsim.send_commands(commands)
+        self.rsim.send_commands(commands, self.rand_params)
         self.sent_commands = commands
         #print("aqui")
         # Get Frame from simulator

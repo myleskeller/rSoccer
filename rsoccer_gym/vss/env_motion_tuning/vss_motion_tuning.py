@@ -126,6 +126,9 @@ class VSSMotionTuningEnv(VSSBaseFIRAEnv):
         vision_noise_x = np.random.normal(self.vision_noise_avg, self.vision_noise_std)*0.01*random.choice([1, -1])
         vision_noise_y = np.random.normal(self.vision_noise_avg, self.vision_noise_std)*0.01*random.choice([1, -1])
         vision_noise_theta = np.random.normal(self.vision_noise_ang_avg, self.vision_noise_ang_std)*random.choice([1, -1])
+        vel_noise_left = np.random.normal(1.04, 0.01)
+        vel_noise_right = np.random.normal(1.04, 0.01)
+
         #f.write(str(vision_noise_x)+", "+str(vision_noise_y)+", "+str(vision_noise_theta)+"\n")
         #f.close()
         self.rand_params = []
@@ -133,6 +136,8 @@ class VSSMotionTuningEnv(VSSBaseFIRAEnv):
         self.rand_params.append(vision_noise_x)
         self.rand_params.append(vision_noise_y)
         self.rand_params.append(vision_noise_theta)
+        self.rand_params.append(vel_noise_left)
+        self.rand_params.append(vel_noise_right)
 
 
     def step(self, action):
