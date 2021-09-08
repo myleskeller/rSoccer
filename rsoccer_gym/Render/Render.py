@@ -257,7 +257,9 @@ class RCGymRender:
         tag_id_colors: Dict[int, Tuple[float, float, float]] = {
             0 : TAG_GREEN,
             1 : TAG_PURPLE,
-            2 : TAG_RED
+            2 : TAG_RED,
+            3: TAG_RED,
+            4: TAG_PINK,
         }
         
         # Add blue robots
