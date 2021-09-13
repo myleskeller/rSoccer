@@ -97,11 +97,11 @@ class VSSMotionTuningEnv(VSSBaseFIRAEnv):
 
         self.v_max_min = 0.7
         self.v_max_max = 1.1
-        self.vision_noise_avg = 0.7
-        self.vision_noise_std = 0.5
+        self.vision_noise_avg = 2.5
+        self.vision_noise_std = 2.0
 
-        self.vision_noise_ang_avg = 4.0
-        self.vision_noise_ang_std = 4.0
+        self.vision_noise_ang_avg = 10.0
+        self.vision_noise_ang_std = 10.0
 
 
         print('Environment initialized')

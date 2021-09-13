@@ -121,8 +121,8 @@ class Fira(RSim):
             robot.yellowteam = cmd.yellow
 
             # convert from linear speed to angular speed
-            robot.wheel_left = cmd.v_wheel0*rand_params[4]# / self.robot_wheel_radius
-            robot.wheel_right = cmd.v_wheel1*rand_params[5]# / self.robot_wheel_radius
+            robot.wheel_left = cmd.v_wheel0# *rand_params[4]# / self.robot_wheel_radius
+            robot.wheel_right = cmd.v_wheel1# *rand_params[5]# / self.robot_wheel_radius
 
             #print(robot.wheel_left, robot.wheel_right)
 
