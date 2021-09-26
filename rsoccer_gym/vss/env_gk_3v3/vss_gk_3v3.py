@@ -90,12 +90,6 @@ class rSimVSSGK(VSSBaseEnv):
         self.observation_space = gym.spaces.Box(low=-self.NORM_BOUNDS,
                                                 high=self.NORM_BOUNDS,
                                                 shape=(40,), dtype=np.float32)
-
-        self.ou_actions = []
-        for i in range(self.n_robots_blue + self.n_robots_yellow):
-            self.ou_actions.append(
-                OrnsteinUhlenbeckAction(self.action_space, dt=self.time_step)
-            )
         
         self.v_wheel_deadzone = 0.05
         self.last_frame = None
@@ -108,7 +102,6 @@ class rSimVSSGK(VSSBaseEnv):
         print('Environment initialized')
     
     def reset(self):
-        self.actions = None
         self.reward_shaping_total = None
         self.previous_ball_potential = None
         self.last_frame = None
@@ -117,8 +110,6 @@ class rSimVSSGK(VSSBaseEnv):
         self.previous_ball_direction = []
         self.isInside = False
         self.ballInsideArea = False
-        for ou in self.ou_actions:
-            ou.reset()
 
         return super().reset()
     
@@ -221,28 +212,18 @@ class rSimVSSGK(VSSBaseEnv):
 
     def _get_commands(self, actions):
         commands = []
-        self.energy_penalty = -(abs(actions[0] * 100) + abs(actions[1] * 100))
-        v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
-        commands.append(Robot(yellow=False, id=0, v_wheel0=v_wheel0,
-                              v_wheel1=v_wheel1))
+        for idx, action in enumerate(actions):
+            yellow = False if idx < self.n_robots_blue else True
+            idx = idx - self.n_robots_blue if yellow else idx
 
-        # Send random commands to the other robots
-        for i in range(1, self.n_robots_blue):
-            actions = self.ou_actions[i].sample()
-            v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
-            commands.append(Robot(yellow=False, id=i, v_wheel0=v_wheel0,
-                                  v_wheel1=v_wheel1))
-
-        atk_action = self.attacker.get_action(self._atk_obs())
-        v_wheel0, v_wheel1 = self._actions_to_v_wheels(atk_action)
-        # we invert the speed on the wheels because of the attacker's reflection on the Y axis.
-        commands.append(Robot(yellow=True, id=0, v_wheel0=v_wheel1,
-                              v_wheel1=v_wheel0))
-        for i in range(1, self.n_robots_yellow):
-            actions = self.ou_actions[self.n_robots_blue+i].sample()
-            v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
-            commands.append(Robot(yellow=False, id=i, v_wheel0=v_wheel0,
-                                  v_wheel1=v_wheel1))
+            v_wheel0, v_wheel1 = self._actions_to_v_wheels(action)
+            if not yellow:
+                commands.append(Robot(yellow=False, id=idx, v_wheel0=v_wheel0,
+                                    v_wheel1=v_wheel1))
+            else:
+                # we invert the speed on the wheels because of the reflection of the yellow robots on the Y axis.
+                commands.append(Robot(yellow=True, id=idx, v_wheel0=v_wheel1,
+                                    v_wheel1=v_wheel0))
 
         return commands
 
