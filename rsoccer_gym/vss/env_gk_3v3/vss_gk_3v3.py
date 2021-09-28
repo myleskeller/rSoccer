@@ -341,21 +341,23 @@ class rSimVSSGK(VSSBaseEnv):
         w_move_y  = 0.3
         w_distance = 0.1
         w_blva = 2.0
+        w_penalty_leave_area = 0.5
 
         if self.reward_shaping_total is None:
             self.reward_shaping_total = {'goal_score': 0, 'move': 0,
                                          'ball_grad': 0, 'energy': 0,
                                          'goals_blue': 0, 'goals_yellow': 0,
                                          'defense': 0,'ball_leave_area': 0,
-                                         'move_y': 0, 'distance_own_goal_bar': 0 }
+                                         'move_y': 0, 'distance_own_goal_bar': 0,
+                                         'gk_leave_area': 0}
 
         # This case the Goalkeeper leaves the gk area
         if self.frame.robots_blue[0].x > -0.63 or self.frame.robots_blue[0].y > 0.4 \
-            or self.frame.robots_blue[0].y < -0.4: 
-            reward = -5
-            done = True
-            self.isInside = False
-            self.ballInsideArea = False
+           or self.frame.robots_blue[0].y < -0.4: 
+            a = np.array([-self.field.length/2. + 0.15, 0.])
+            b = np.array([self.frame.robots_blue[0].x, self.frame.robots_blue[0].y])
+            gk_leave_area_reward = reward = -w_penalty_leave_area*np.linalg.norm(a - b)
+            self.reward_shaping_total['gk_leave_area'] = gk_leave_area_reward
 
         elif self.last_frame is not None:
             self.previous_ball_potential = None
@@ -370,7 +372,6 @@ class rSimVSSGK(VSSBaseEnv):
                or self.frame.ball.y < -0.35):
                 ball_leave_area_reward = 1 
                 self.ballInsideArea = False
-                done = True
 
             # If the enemy scored a goal
             if self.frame.ball.x < -(self.field.length / 2):
