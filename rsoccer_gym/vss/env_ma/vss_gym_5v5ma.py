@@ -154,8 +154,8 @@ class VSS5v5MAEnv(VSSBaseEnv):
     def _calculate_reward_and_done(self):
         reward = 0
         goal = False
-        w_move = 0.2
-        w_ball_grad = 0.8
+        w_move = 50
+        w_ball_grad = 1.2
         w_energy = 1e-5
         if self.reward_shaping_total is None:
             self.reward_shaping_total = {'goal_score': 0, 'move': 0,
