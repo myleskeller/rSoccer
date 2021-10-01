@@ -74,6 +74,8 @@ class VSS5v5MAEnv(VSSBaseEnv):
         self.previous_ball_potential = None
         self.actions: Dict = None
         self.reward_shaping_total = None
+        self.prev_min_dist = None
+
         self.v_wheel_deadzone = 0.05
 
         self.ou_actions = []
@@ -88,6 +90,7 @@ class VSS5v5MAEnv(VSSBaseEnv):
         self.actions = None
         self.reward_shaping_total = None
         self.previous_ball_potential = None
+        self.prev_min_dist = None
         for ou in self.ou_actions:
             ou.reset()
 
@@ -151,7 +154,7 @@ class VSS5v5MAEnv(VSSBaseEnv):
     def _calculate_reward_and_done(self):
         reward = 0
         goal = False
-        w_move = 0.
+        w_move = 0.2
         w_ball_grad = 0.8
         w_energy = 1e-5
         if self.reward_shaping_total is None:
@@ -292,14 +295,18 @@ class VSS5v5MAEnv(VSSBaseEnv):
         '''
 
         ball = np.array([self.frame.ball.x, self.frame.ball.y])
-        robot = np.array([self.frame.robots_blue[0].x,
-                          self.frame.robots_blue[0].y])
-        robot_vel = np.array([self.frame.robots_blue[0].v_x,
-                              self.frame.robots_blue[0].v_y])
-        robot_ball = ball - robot
-        robot_ball = robot_ball/np.linalg.norm(robot_ball)
-
-        move_reward = np.dot(robot_ball, robot_vel)
+        min_dist = None
+        for rbt in self.frame.robots_blue.values():
+            rbt_pos = np.array([rbt.x, rbt.y])
+            rbt_ball = np.linalg.norm(ball - rbt_pos)
+            min_dist = rbt_ball if not min_dist or rbt_ball < min_dist else min_dist
+        
+        if self.prev_min_dist:
+            move_reward = self.prev_min_dist - min_dist
+        else:
+            move_reward = 0.
+        
+        self.prev_min_dist = min_dist
 
         move_reward = np.clip(move_reward / 0.4, -5.0, 5.0)
         return move_reward
