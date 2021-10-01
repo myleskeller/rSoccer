@@ -75,6 +75,7 @@ class VSS5v5MAEnv(VSSBaseEnv):
         self.actions: Dict = None
         self.reward_shaping_total = None
         self.prev_min_dist = None
+        self.dist_order = None
 
         self.v_wheel_deadzone = 0.05
 
@@ -91,6 +92,8 @@ class VSS5v5MAEnv(VSSBaseEnv):
         self.reward_shaping_total = None
         self.previous_ball_potential = None
         self.prev_min_dist = None
+        self.dist_order = None
+
         for ou in self.ou_actions:
             ou.reset()
 
@@ -102,6 +105,12 @@ class VSS5v5MAEnv(VSSBaseEnv):
 
     def _frame_to_observations(self):
 
+        self.dist_order = []
+        ball = np.array([self.frame.ball.x, self.frame.ball.y])
+        for i in range(self.n_robots_blue):
+            self.dist_order.append((i, np.linalg.norm(ball - np.array([self.frame.robots_blue[i].x, self.frame.robots_blue[i].y]))))
+        self.dist_order.sort(key=lambda x: x[1])
+
         observation = []
 
         observation.append(self.norm_pos(self.frame.ball.x)) # 0
@@ -109,7 +118,7 @@ class VSS5v5MAEnv(VSSBaseEnv):
         observation.append(self.norm_v(self.frame.ball.v_x)) # 2
         observation.append(self.norm_v(self.frame.ball.v_y)) # 3
 
-        for i in range(5):
+        for i, _ in self.dist_order:
             observation.append(self.norm_pos(self.frame.robots_blue[i].x)) 
             observation.append(self.norm_pos(self.frame.robots_blue[i].y)) 
             observation.append(
@@ -138,16 +147,16 @@ class VSS5v5MAEnv(VSSBaseEnv):
         self.actions = {}
 
         self.actions[0] = actions
-        for i in range(self.n_robots_blue):
-            v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions[i:2*(i+1)])
-            commands.append(Robot(yellow=False, id=i, v_wheel0=v_wheel0,
+        for act_i, dist_i in enumerate(self.dist_order):
+            v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions[act_i:2*(act_i+1)])
+            commands.append(Robot(yellow=False, id=dist_i[0], v_wheel0=v_wheel0,
                                 v_wheel1=v_wheel1))
 
         for i in range(self.n_robots_yellow):
-            actions = self.ou_actions[self.n_robots_blue+i].sample()
+            # actions = self.ou_actions[self.n_robots_blue+i].sample()
             v_wheel0, v_wheel1 = self._actions_to_v_wheels(actions)
-            commands.append(Robot(yellow=True, id=i, v_wheel0=v_wheel0,
-                                  v_wheel1=v_wheel1))
+            commands.append(Robot(yellow=True, id=i, v_wheel0=0.,
+                                  v_wheel1=0.))
 
         return commands
 
@@ -294,12 +303,7 @@ class VSS5v5MAEnv(VSSBaseEnv):
         This indicates rather the robot is moving towards the ball or not.
         '''
 
-        ball = np.array([self.frame.ball.x, self.frame.ball.y])
-        min_dist = None
-        for rbt in self.frame.robots_blue.values():
-            rbt_pos = np.array([rbt.x, rbt.y])
-            rbt_ball = np.linalg.norm(ball - rbt_pos)
-            min_dist = rbt_ball if not min_dist or rbt_ball < min_dist else min_dist
+        min_dist = self.dist_order[0][1]
         
         if self.prev_min_dist:
             move_reward = self.prev_min_dist - min_dist
