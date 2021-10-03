@@ -13,7 +13,7 @@ from rsoccer_gym.vss.vss_gym_base import VSSBaseEnv
 from rsoccer_gym.vss.env_gk.attacker.models import DDPGActor, GaussianPolicy
 
 
-class rSimVSSGK(VSSBaseEnv):
+class rSimVSSGK3V3(VSSBaseEnv):
     """
     Description:
         This environment controls a single robot football goalkeeper against an attacker in the VSS League 3v3 match
