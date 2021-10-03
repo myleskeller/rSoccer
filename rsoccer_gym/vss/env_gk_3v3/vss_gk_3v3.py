@@ -180,6 +180,7 @@ class rSimVSSGK3V3(VSSBaseEnv):
             observation.append(self.norm_w(-self.frame.robots_yellow[idx].v_theta))
 
             for i in range(self.n_robots_yellow):
+                if i == idx: continue
                 observation.append(self.norm_pos(-self.frame.robots_yellow[i].x))
                 observation.append(self.norm_pos(self.frame.robots_yellow[i].y))
                 observation.append(
