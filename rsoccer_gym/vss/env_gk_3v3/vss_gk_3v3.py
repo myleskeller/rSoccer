@@ -418,21 +418,43 @@ class rSimVSSGK3V3(VSSBaseEnv):
                                        field_half_length - 0.1)
         def y(): return random.uniform(-field_half_width + 0.1,
                                        field_half_width - 0.1)
+
+
         pos_frame: Frame = Frame()
 
         pos_frame.ball.x = random.uniform(-field_half_length + 0.1,
                                           field_half_length - 0.1)
         pos_frame.ball.y = random.uniform(-field_half_width + 0.1,
                                           field_half_width - 0.1)
+        
+        cond_ball_to_goal = np.random.rand()        
+        if (cond_ball_to_goal < 0.4):
+            goal_middle = np.array([-field_half_length, 0.])
+            ball = np.array([pos_frame.ball.x, pos_frame.ball.y])
+            ball_to_goal = (goal_middle - ball)
+            ball_v = ball_to_goal/np.linalg.norm(ball_to_goal) * self.max_v
+            
+            pos_frame.ball.v_x = ball_v[0] 
+            pos_frame.ball.v_y = ball_v[1]
 
-        pos_frame.robots_blue[0] = Robot(x=-field_half_length + 0.05,
-                                         y=0.0,
+            pos_frame.robots_yellow[0] = Robot(x=np.clip(x(),pos_frame.ball.x, None), y=y(), theta=math.pi)
+            pos_frame.robots_yellow[1] = Robot(x=np.clip(x(),pos_frame.ball.x, None), y=y(), theta=math.pi)
+            pos_frame.robots_yellow[2] = Robot(x=np.clip(x(),pos_frame.ball.x, None), y=y(), theta=math.pi)
+        else:
+            pos_frame.robots_yellow[0] = Robot(x=x(), y=y(), theta=math.pi)
+            pos_frame.robots_yellow[1] = Robot(x=x(), y=y(), theta=math.pi)
+            pos_frame.robots_yellow[2] = Robot(x=x(), y=y(), theta=math.pi)
+
+
+        x_gk = random.uniform(-field_half_length + 0.05,
+                              pos_frame.ball.x)
+            # -field_half_length + 0.05
+        y_gk = y()
+
+        pos_frame.robots_blue[0] = Robot(x=x_gk,
+                                         y=y_gk,
                                          theta=0)
         pos_frame.robots_blue[1] = Robot(x=x(), y=y(), theta=0)
         pos_frame.robots_blue[2] = Robot(x=x(), y=y(), theta=0)
-
-        pos_frame.robots_yellow[0] = Robot(x=x(), y=y(), theta=math.pi)
-        pos_frame.robots_yellow[1] = Robot(x=x(), y=y(), theta=math.pi)
-        pos_frame.robots_yellow[2] = Robot(x=x(), y=y(), theta=math.pi)
 
         return pos_frame
