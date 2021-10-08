@@ -352,57 +352,59 @@ class rSimVSSGK3V3(VSSBaseEnv):
                                          'move_y': 0, 'distance_own_goal_bar': 0,
                                          'gk_leave_area': 0}
 
-        # This case the Goalkeeper leaves the gk area
-        if self.frame.robots_blue[0].x > -0.63 or self.frame.robots_blue[0].y > 0.4 \
-           or self.frame.robots_blue[0].y < -0.4: 
-            a = np.array([-self.field.length/2. + 0.15, 0.])
-            b = np.array([self.frame.robots_blue[0].x, self.frame.robots_blue[0].y])
-            gk_leave_area_reward = reward = -w_penalty_leave_area*np.linalg.norm(a - b)
-            self.reward_shaping_total['gk_leave_area'] = gk_leave_area_reward
+        # If the enemy scored a goal
+        if self.frame.ball.x < -(self.field.length / 2):
+            self.reward_shaping_total['goals_yellow'] += 1
+            self.reward_shaping_total['goal_score'] -= 1
+            goal_score = -1
+            reward = -4
+            self.ballInsideArea = False
+        else:
+            # This case the Goalkeeper leaves the gk area
+            if self.frame.robots_blue[0].x > -0.63 or self.frame.robots_blue[0].y > 0.4 \
+            or self.frame.robots_blue[0].y < -0.4: 
+                a = np.array([-self.field.length/2. + 0.15, 0.])
+                b = np.array([self.frame.robots_blue[0].x, self.frame.robots_blue[0].y])
+                gk_leave_area_reward = reward = -w_penalty_leave_area*np.linalg.norm(a - b)
+                self.reward_shaping_total['gk_leave_area'] = gk_leave_area_reward
 
-        elif self.last_frame is not None:
-            self.previous_ball_potential = None
-            
-            # If the ball entered in the gk area
-            if (not self.ballInsideArea) and self.frame.ball.x < -0.6 and (self.frame.ball.y < 0.35 \
-               and self.frame.ball.y > -0.35):
-                self.ballInsideArea = True
+            elif self.last_frame is not None:
+                self.previous_ball_potential = None
+                
+                # If the ball entered in the gk area
+                if (not self.ballInsideArea) and self.frame.ball.x < -0.6 and (self.frame.ball.y < 0.35 \
+                and self.frame.ball.y > -0.35):
+                    self.ballInsideArea = True
 
-            # If the ball entered in the gk area and leaves it
-            if self.ballInsideArea and (self.frame.ball.x > -0.6 or self.frame.ball.y > 0.35 \
-               or self.frame.ball.y < -0.35):
-                ball_leave_area_reward = 1 
-                self.ballInsideArea = False
+                # If the ball entered in the gk area and leaves it
+                if self.ballInsideArea and (self.frame.ball.x > -0.6 or self.frame.ball.y > 0.35 \
+                or self.frame.ball.y < -0.35):
+                    ball_leave_area_reward = 1 
+                    self.ballInsideArea = False
 
-            # If the enemy scored a goal
-            if self.frame.ball.x < -(self.field.length / 2):
-                self.reward_shaping_total['goals_yellow'] += 1
-                self.reward_shaping_total['goal_score'] -= 1
-                goal_score = -2 
-                self.ballInsideArea = False
 
-            if goal_score != 0:
-                reward = goal_score
+                if goal_score != 0:
+                    reward = goal_score
 
-            else:
-                move_reward = self.__move_reward()
-                move_y_reward = self.__move_reward_y()
-                ball_defense_reward = self.__defended_ball() 
-                dist_robot_own_goal_bar = -self.field.length / \
-                    2 + 0.15 - self.frame.robots_blue[0].x
+                else:
+                    move_reward = self.__move_reward()
+                    move_y_reward = self.__move_reward_y()
+                    ball_defense_reward = self.__defended_ball() 
+                    dist_robot_own_goal_bar = -self.field.length / \
+                        2 + 0.15 - self.frame.robots_blue[0].x
 
-                reward = w_move_y * move_y_reward + \
-                         w_distance * dist_robot_own_goal_bar + \
-                         w_defense * ball_defense_reward + \
-                         w_blva * ball_leave_area_reward
+                    reward = w_move_y * move_y_reward + \
+                            w_distance * dist_robot_own_goal_bar + \
+                            w_defense * ball_defense_reward + \
+                            w_blva * ball_leave_area_reward
 
-                self.reward_shaping_total['move'] += w_move * move_reward
-                self.reward_shaping_total['move_y'] += w_move_y * move_y_reward
-                self.reward_shaping_total['ball_grad'] += w_ball_pot * ball_potential
-                self.reward_shaping_total['distance_own_goal_bar'] += w_distance * dist_robot_own_goal_bar
-                self.reward_shaping_total['defense'] += ball_defense_reward * w_defense
-                self.reward_shaping_total['ball_leave_area'] += w_blva * ball_leave_area_reward
-            self.last_frame = self.frame
+                    self.reward_shaping_total['move'] += w_move * move_reward
+                    self.reward_shaping_total['move_y'] += w_move_y * move_y_reward
+                    self.reward_shaping_total['ball_grad'] += w_ball_pot * ball_potential
+                    self.reward_shaping_total['distance_own_goal_bar'] += w_distance * dist_robot_own_goal_bar
+                    self.reward_shaping_total['defense'] += ball_defense_reward * w_defense
+                    self.reward_shaping_total['ball_leave_area'] += w_blva * ball_leave_area_reward
+                self.last_frame = self.frame
         done = goal_score != 0 or done
 
         return reward, done
