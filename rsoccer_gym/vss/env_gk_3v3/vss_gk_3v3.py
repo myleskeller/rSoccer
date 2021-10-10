@@ -357,7 +357,7 @@ class rSimVSSGK3V3(VSSBaseEnv):
             self.reward_shaping_total['goals_yellow'] += 1
             self.reward_shaping_total['goal_score'] -= 1
             goal_score = -1
-            reward = -4
+            reward = -4 # -2
             self.ballInsideArea = False
         else:
             # This case the Goalkeeper leaves the gk area
