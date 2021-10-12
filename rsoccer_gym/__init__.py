@@ -25,6 +25,11 @@ register(id='VSSGK3V3-v0',
          max_episode_steps=1200
          )
 
+register(id='VSSGK3V3FIRA-v0',
+         entry_point='rsoccer_gym.vss.env_gk_3v3:rSimVSSGK3V3FIRA',
+         max_episode_steps=1200
+         )
+
 register(id='VSSFIRA-v0',
          entry_point='rsoccer_gym.vss.env_vss:VSSFIRAEnv',
          max_episode_steps=1200
