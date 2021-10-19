@@ -12,7 +12,9 @@ import gym
 import numpy as np
 from rsoccer_gym.Entities import Frame, Robot
 from rsoccer_gym.Simulators.rsim import RSimVSS
-from rsoccer_gym.Simulators.fira import Fira
+from rsoccer_gym.Simulators.fira import Fira 
+from rsoccer_gym.vss.env_motion_tuning.nrfparser import NRFParser
+
 
 
 
@@ -51,6 +53,12 @@ class VSSBaseEnv(gym.Env):
         self.sent_commands = None
         self.rand_params = []
 
+        self.ctrl = NRFParser()
+
+    def sendSpeeds(self, commands):
+        rob = commands[0]
+        ctrl.send_speeds(rob.left_wheel_speed, rob.right_wheel_speed, rob.id)
+
     def step(self, action):
         self.steps += 1
         # Join agent action with environment actions
@@ -59,6 +67,7 @@ class VSSBaseEnv(gym.Env):
         # Send command to simulator
         #print(commands)
         self.rsim.send_commands(commands, self.rand_params)
+        #self.sendSpeeds(commands)
         self.sent_commands = commands
         #print("aqui")
         # Get Frame from simulator

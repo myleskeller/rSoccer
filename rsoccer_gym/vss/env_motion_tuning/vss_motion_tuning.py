@@ -12,6 +12,8 @@ from rsoccer_gym.Utils import KDTree
 from rsoccer_gym.vss.env_motion_tuning.univectorPosture import UnivectorPosture
 from rsoccer_gym.vss.env_motion_tuning.goToBallState import goToBallState
 
+from nrfparser import NRFParser
+
 def distance(pointA, pointB):
 
     x1 = pointA[0]
@@ -97,11 +99,11 @@ class VSSMotionTuningEnv(VSSBaseFIRAEnv):
 
         self.v_max_min = 0.7
         self.v_max_max = 1.1
-        self.vision_noise_avg = 2.5
-        self.vision_noise_std = 2.0
+        self.vision_noise_avg = 5.0
+        self.vision_noise_std = 4.0
 
-        self.vision_noise_ang_avg = 10.0
-        self.vision_noise_ang_std = 10.0
+        self.vision_noise_ang_avg = 20.0
+        self.vision_noise_ang_std = 20.0
 
 
         print('Environment initialized')
@@ -126,8 +128,8 @@ class VSSMotionTuningEnv(VSSBaseFIRAEnv):
         vision_noise_x = np.random.normal(self.vision_noise_avg, self.vision_noise_std)*0.01*random.choice([1, -1])
         vision_noise_y = np.random.normal(self.vision_noise_avg, self.vision_noise_std)*0.01*random.choice([1, -1])
         vision_noise_theta = np.random.normal(self.vision_noise_ang_avg, self.vision_noise_ang_std)*random.choice([1, -1])
-        vel_noise_left = np.random.normal(1.04, 0.01)
-        vel_noise_right = np.random.normal(1.04, 0.01)
+        vel_noise_left = np.random.normal(1.30, 0.3)
+        vel_noise_right = np.random.normal(1.30, 0.3)
 
         #f.write(str(vision_noise_x)+", "+str(vision_noise_y)+", "+str(vision_noise_theta)+"\n")
         #f.close()
